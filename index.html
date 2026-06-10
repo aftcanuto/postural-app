@@ -1,0 +1,3105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avaliação Postural — MedFit</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Postural">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --bg:#f8f8f7;--surface:#fff;--border:#e2e2df;--border-mid:#c8c8c4;
+  --text:#1a1a18;--text-muted:#6b6b67;--text-hint:#9b9b96;
+  --accent:#1a1a18;--accent-fg:#fff;
+  --info-bg:#e8f4fd;--info-text:#0c5a8a;
+  --success-bg:#eaf7ee;--success-text:#1a6b35;
+  --danger-bg:#fdeaea;--danger-text:#8a1c1c;
+  --warning-bg:#fff8e1;--warning-text:#7a5c00;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1a1a18;--surface:#242422;--border:#383836;--border-mid:#4a4a47;
+  --text:#f0f0ee;--text-muted:#9b9b96;--text-hint:#6b6b67;
+  --accent:#f0f0ee;--accent-fg:#1a1a18;
+  --info-bg:#0c2a3d;--info-text:#7dc4f0;
+  --success-bg:#0a2a16;--success-text:#5ecf7e;
+  --danger-bg:#2a0c0c;--danger-text:#f07d7d;
+  --warning-bg:#2a1f00;--warning-text:#fbbf24;
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* AUTH SCREEN */
+.auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1rem}
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:2rem;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.auth-logo h1{font-size:18px;font-weight:700}
+.auth-logo .sub{font-size:12px;color:var(--text-muted)}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:1.5rem}
+.auth-tab{flex:1;padding:8px;font-size:13px;font-weight:500;border:none;background:var(--bg);color:var(--text-muted);cursor:pointer;font-family:inherit}
+.auth-tab.active{background:var(--surface);color:var(--text)}
+.auth-msg{font-size:12px;padding:8px 12px;border-radius:var(--r-sm);margin-bottom:12px;display:none}
+.auth-msg.error{background:var(--danger-bg);color:var(--danger-text);display:block}
+.auth-msg.success{background:var(--success-bg);color:var(--success-text);display:block}
+.auth-msg.warning{background:var(--warning-bg);color:var(--warning-text);display:block}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;height:48px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200}
+header h1{font-size:14px;font-weight:600}
+header .sub{font-size:11px;color:var(--text-muted)}
+.hbadge{font-size:11px;color:var(--text-muted);background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2px 10px}
+.hbtn{padding:4px 12px;font-size:12px;font-family:inherit;border:1px solid var(--border);border-radius:20px;background:var(--surface);color:var(--text-muted);cursor:pointer;display:flex;align-items:center;gap:5px}
+.hbtn:hover{background:var(--bg)}
+.hbtn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.save-status{font-size:11px;color:var(--text-hint);display:flex;align-items:center;gap:4px}
+
+/* NAV */
+.step-nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);padding:0 1.25rem;overflow-x:auto}
+.snav-btn{padding:10px 14px;font-size:12px;font-weight:500;border:none;background:none;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-family:inherit}
+.snav-btn:hover{color:var(--text)}
+.snav-btn.active{color:var(--text);border-bottom-color:var(--accent)}
+
+/* CONTENT */
+.content{padding:1.25rem;max-width:1400px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.25rem;margin-bottom:1rem}
+.card-title{font-size:13px;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg label{font-size:11px;font-weight:500;color:var(--text-muted)}
+.fg input,.fg select,.fg textarea{font-size:13px;font-family:inherit;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);width:100%}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--border-mid)}
+.fg textarea{resize:vertical;min-height:60px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+.imc-badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;margin-top:4px;display:inline-block}
+.btn{padding:8px 16px;border-radius:var(--r-md);font-size:13px;font-family:inherit;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;transition:all .12s}
+.btn-primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.btn-primary:hover{opacity:.85}
+.btn-secondary{background:var(--surface);color:var(--text);border-color:var(--border)}
+.btn-secondary:hover{background:var(--bg)}
+.btn-danger{background:var(--danger-bg);color:var(--danger-text);border-color:var(--danger-bg)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* FOTOS */
+.photo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.photo-slot{border:1.5px dashed var(--border-mid);border-radius:var(--r-lg);padding:8px 8px 6px;text-align:center;cursor:pointer;transition:all .12s;background:var(--bg);overflow:hidden}
+.photo-slot:hover{border-color:var(--accent)}
+.photo-slot.loaded{border-style:solid;border-color:var(--success-text)}
+.photo-slot.cur{border-color:var(--info-text);background:var(--info-bg)}
+.photo-thumb-wrap{width:100%;aspect-ratio:3/4;overflow:hidden;border-radius:var(--r-sm);background:#111;margin-bottom:6px}
+.photo-thumb-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.photo-ph{width:100%;aspect-ratio:3/4;background:var(--border);border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;margin-bottom:6px;overflow:hidden}
+.slot-lbl{font-size:11px;font-weight:500;color:var(--text-muted)}
+
+/* SIMETRÓGRAFO */
+.sg-main{display:grid;grid-template-columns:1fr 320px;gap:10px;align-items:start}
+/* sg-panel moved to sg-panel-col */
+/* sg-canvas-area moved to sg-canvas-col */
+/* canvas-wrap removed */
+.canvas-wrap.mode-pan{cursor:grab}
+#mainCanvas{display:block;transform-origin:top left;max-width:100%;max-height:calc(100vh - 200px)}
+.compare-wrap{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:#0e0e0e;border-radius:var(--r-lg);overflow:hidden;min-height:200px}
+.compare-side{position:relative;overflow:hidden}
+.compare-lbl{position:absolute;top:6px;left:8px;font-size:11px;font-weight:600;color:#fff;background:rgba(0,0,0,.5);padding:2px 7px;border-radius:4px;z-index:2}
+.psec{margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.psec:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.ptitle{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-hint);margin-bottom:8px}
+.ctrl{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.ctrl label{font-size:11px;color:var(--text-muted);min-width:64px}
+.ctrl input[type=range]{flex:1;accent-color:var(--accent)}
+.ctrl .num{width:48px;font-size:12px;font-weight:500;text-align:right;padding:2px 4px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:inherit}
+.ctrl .num:focus{outline:none;border-color:var(--border-mid)}
+.cdots{display:flex;gap:4px}
+.cdot{width:18px;height:18px;border-radius:50%;cursor:pointer;border:2px solid transparent;flex-shrink:0}
+.cdot:hover{transform:scale(1.15)}
+.cdot.on{border-color:var(--text)}
+.color-row{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.color-row label{font-size:11px;color:var(--text-muted);min-width:64px}
+.hl-item{display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.hl-name{font-size:10px;color:var(--text-muted);min-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hl-item input[type=range]{flex:1;accent-color:var(--accent)}
+.hl-num{width:42px;font-size:11px;padding:2px 3px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:inherit;text-align:right}
+.hl-num:focus{outline:none;border-color:var(--border-mid)}
+.hl-del{background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:14px;padding:0 2px;flex-shrink:0}
+.add-hl{font-size:11px;background:none;border:1px dashed var(--border-mid);border-radius:var(--r-sm);padding:3px 8px;cursor:pointer;color:var(--text-muted);margin-top:2px}
+.lm-sz-row{display:flex;gap:5px;align-items:flex-end;margin-top:4px}
+.lm-sz{background:none;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;color:var(--text-muted);display:flex;align-items:center;justify-content:center;width:30px;height:30px;padding:0;flex-shrink:0;line-height:1}
+.lm-sz.on{border-color:var(--accent);color:var(--accent)}
+.lm-sz:hover{border-color:var(--border-mid);color:var(--text)}
+.add-hl:hover{background:var(--bg)}
+.tool-row{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px}
+.tbtn{padding:4px 8px;font-size:11px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text-muted);cursor:pointer;font-family:inherit}
+.tbtn:hover{border-color:var(--border-mid);color:var(--text)}
+.tbtn.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.tbtn.danger{border-color:var(--danger-text);color:var(--danger-text);background:var(--danger-bg)}
+.hint{font-size:10px;color:var(--info-text);background:var(--info-bg);border-radius:var(--r-sm);padding:4px 6px;margin-bottom:6px;line-height:1.4}
+.lm-list{max-height:100px;overflow-y:auto;margin-bottom:4px}
+.lm-row{display:flex;align-items:center;gap:4px;padding:2px 0;border-bottom:1px solid var(--border);font-size:11px}
+.lm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.lm-name{flex:1}
+.lm-coords{font-size:10px;color:var(--text-hint)}
+.lm-del{background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:13px}
+.chips{display:flex;gap:3px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:10px;padding:2px 6px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:var(--bg);color:var(--text-muted)}
+.chip:hover{background:var(--surface);color:var(--text)}
+.achado-chip{font-size:10px;padding:2px 7px;border:1px solid var(--border);border-radius:20px;cursor:pointer;background:var(--bg);color:var(--text-muted);margin:2px;display:inline-block}
+.achado-chip:hover{background:var(--surface);color:var(--text);border-color:var(--border-mid)}
+.toggle-row{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.toggle-row label{font-size:10px;color:var(--text-muted);flex:1;cursor:pointer;line-height:1.3}
+.toggle{position:relative;display:inline-block;flex:none!important;width:26px!important;height:14px;cursor:pointer}
+.toggle input{opacity:0;width:0;height:0;position:absolute;pointer-events:none}
+.toggle-slider{position:absolute;inset:0;background:var(--border-mid);border-radius:14px;transition:.15s;pointer-events:none}
+.toggle-slider:before{content:'';position:absolute;width:10px;height:10px;left:2px;top:2px;background:#fff;border-radius:50%;transition:.15s;box-shadow:0 1px 2px rgba(0,0,0,.2);pointer-events:none}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(12px)}
+.lm-input{width:100%;font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:inherit;margin-bottom:4px}
+.lm-input:focus{outline:none;border-color:var(--border-mid)}
+.angle-item{background:var(--bg);border-radius:var(--r-sm);padding:4px 7px;margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;font-size:10px}
+.angle-val{font-size:13px;font-weight:600}
+.angle-del{background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:12px}
+.ruler-item{background:var(--bg);border-radius:var(--r-sm);padding:4px 7px;margin-bottom:3px;font-size:11px;display:flex;justify-content:space-between;align-items:center}
+.ruler-del{background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:12px}
+.model-row{display:flex;gap:4px;align-items:center;margin-bottom:6px}
+.model-select{flex:1;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:inherit}
+.zoom-info{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 7px;border-radius:4px;pointer-events:none;z-index:10}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r-lg);width:90%;max-width:680px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.modal-header span{font-size:14px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-muted);line-height:1}
+.modal-body{padding:16px 20px;overflow-y:auto;flex:1}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);font-size:11px;color:var(--text-hint);flex-shrink:0}
+
+/* AVALIAÇÕES SALVAS */
+.aval-card{border:1px solid var(--border);border-radius:var(--r-md);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .12s}
+.aval-card:hover{background:var(--bg);border-color:var(--border-mid)}
+.aval-info{flex:1}
+.aval-nome{font-size:13px;font-weight:600}
+.aval-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+.aval-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.aval-status.em_andamento{background:var(--warning-bg);color:var(--warning-text)}
+.aval-status.finalizada{background:var(--success-bg);color:var(--success-text)}
+
+/* ADMIN */
+.admin-card{border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px}
+.admin-role{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.admin-role.pending{background:var(--warning-bg);color:var(--warning-text)}
+.admin-role.approved{background:var(--success-bg);color:var(--success-text)}
+.admin-role.revoked{background:var(--danger-bg);color:var(--danger-text)}
+
+/* EXPORTAR */
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.export-card{border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.export-preview{width:100%;display:block}
+.export-footer{padding:7px 12px;display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-top:1px solid var(--border)}
+.export-name{font-size:12px;font-weight:500}
+.export-dl{font-size:12px;color:var(--info-text);text-decoration:none;display:flex;align-items:center;gap:4px}
+/* PACIENTES */
+.pac-card{border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .12s}
+.pac-card:hover{background:var(--bg);border-color:var(--border-mid)}
+.pac-name{font-size:13px;font-weight:600;flex:1}
+.pac-meta{font-size:11px;color:var(--text-muted);margin-top:1px}
+.pac-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--info-bg);color:var(--info-text)}
+/* SEARCH */
+.search-input{width:100%;font-size:13px;padding:7px 10px 7px 32px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);font-family:inherit}
+.search-input:focus{outline:none;border-color:var(--border-mid)}
+.search-wrap{position:relative;margin-bottom:12px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);opacity:.4;pointer-events:none}
+/* ANOTAÇÃO */
+.annot-item{background:rgba(255,255,0,.15);border:1px solid rgba(255,255,0,.4);border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;position:absolute;transform:translate(-50%,-50%);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;user-select:none}
+.annot-item:hover{background:rgba(255,255,0,.3)}
+/* CALIB */
+.calib-line{stroke:#00ff88;stroke-width:2;stroke-dasharray:6,4;opacity:.8}
+.calib-dot{fill:#00ff88;opacity:.9}
+
+/* TOAST */
+#toast{display:none;position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;z-index:600;pointer-events:none;white-space:nowrap}
+#installBanner{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 16px;z-index:550;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.1)}
+#installBanner .ib-icon{width:36px;height:36px;border-radius:8px;background:#1a1a18;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+#installBanner .ib-text{flex:1}
+#installBanner .ib-title{font-size:13px;font-weight:600}
+#installBanner .ib-sub{font-size:11px;color:var(--text-muted)}
+
+/* SPINNER */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SG SHELL 3-COLUMN LAYOUT ── */
+.sg-shell{display:grid !important;grid-template-columns:88px 1fr 300px !important;height:calc(100vh - 156px);min-height:500px;gap:0;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.vista-sidebar{background:var(--bg);border-right:1px solid var(--border);padding:8px 6px;display:flex;flex-direction:column;gap:6px;overflow-y:auto}
+.sg-canvas-col{display:flex !important;flex-direction:column !important;overflow:hidden;background:#0e0e0e;min-width:0}
+.sg-toolbar{display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.canvas-fill{flex:1 !important;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;cursor:crosshair;min-height:0}
+#mainCanvas{display:block;transform-origin:top left;max-width:100%;max-height:100%}
+.sg-nav-row{display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0}
+.sg-panel-col{display:flex !important;flex-direction:column !important;border-left:1px solid var(--border);background:var(--surface);overflow:hidden;min-width:0}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg)}
+.panel-tab{flex:1;padding:8px 4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;border:none;background:transparent;color:var(--text-muted);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;white-space:nowrap;transition:all .12s}
+.panel-tab.active{color:var(--text);border-bottom-color:var(--accent);background:var(--surface)}
+.panel-content{display:none;overflow-y:auto;padding:12px}
+.panel-content.active{display:block;overflow-y:auto;flex:1}
+/* vista miniatura */
+.vista-mini{border:1.5px solid var(--border);border-radius:var(--r-md);overflow:hidden;cursor:pointer;transition:all .12s;background:#0e0e0e;position:relative;flex-shrink:0}
+.vista-mini:hover{border-color:var(--border-mid)}
+.vista-mini.cur{border-color:var(--info-text);box-shadow:0 0 0 2px rgba(12,90,138,.2)}
+.vista-mini-thumb{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0e0e0e}
+.vista-mini-ph{width:100%;aspect-ratio:3/4;display:flex;align-items:center;justify-content:center;background:var(--border)}
+.vista-mini-lbl{font-size:9px;font-weight:600;color:#fff;text-align:center;padding:2px 0;background:rgba(0,0,0,.65);letter-spacing:.03em}
+
+@media(max-width:768px){
+  .sg-shell{grid-template-columns:1fr !important;grid-template-rows:auto 1fr auto;height:auto}
+  .vista-sidebar{flex-direction:row;height:80px;overflow-x:auto;overflow-y:hidden;border-right:none;border-bottom:1px solid var(--border)}
+  .sg-panel-col{min-height:300px}
+  .photo-grid{grid-template-columns:1fr 1fr}
+  .export-grid{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .compare-wrap{grid-template-columns:1fr}
+  .grid2{grid-template-columns:1fr}
+}
+
+.achado-badge{display:inline-block;font-size:9px;font-weight:600;padding:2px 6px;border-radius:10px;margin-top:3px;letter-spacing:.3px}
+.achado-ok{background:#d1fae5;color:#065f46}
+.achado-warn{background:#fef3c7;color:#92400e}
+.achado-alert{background:#fee2e2;color:#991b1b}
+.sym-section{margin-top:2px}
+.sym-row{display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);font-size:10px}
+.sym-name{flex:1;color:var(--text-muted)}
+.sym-delta{font-weight:600;font-size:11px;min-width:36px;text-align:right}
+.sym-side{font-size:9px;color:var(--text-hint);min-width:14px}
+.sym-bar{height:4px;border-radius:2px;min-width:2px;max-width:60px}
+.sym-ok .sym-bar{background:#10b981}
+.sym-warn .sym-bar{background:#f59e0b}
+.sym-alert .sym-bar{background:#ef4444}
+.sym-ok .sym-delta{color:#065f46}
+.sym-warn .sym-delta{color:#92400e}
+.sym-alert .sym-delta{color:#991b1b}
+.sym-score{display:flex;align-items:center;gap:6px;padding:6px 0;font-size:11px;font-weight:600}
+.undo-badge{font-size:9px;color:var(--text-hint);margin-left:4px;font-weight:400}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ AUTH SCREEN ═══════════════════════════════ -->
+<div id="authScreen" class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <div><h1>Avaliação Postural</h1><div class="sub">MedFit — Simetrógrafo clínico</div></div>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab_login" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" id="tab_register" onclick="switchAuthTab('register')">Solicitar acesso</button>
+    </div>
+    <div id="authMsg" class="auth-msg"></div>
+
+    <!-- LOGIN -->
+    <div id="loginForm">
+      <div class="fg" style="margin-bottom:12px"><label>E-mail</label><input type="email" id="login_email" placeholder="seu@email.com"></div>
+      <div class="fg" style="margin-bottom:16px"><label>Senha</label><input type="password" id="login_pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()" id="btnLogin">Entrar</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="registerForm" style="display:none">
+      <div class="fg" style="margin-bottom:12px"><label>Nome completo</label><input type="text" id="reg_nome" placeholder="Seu nome"></div>
+      <div class="fg" style="margin-bottom:12px"><label>E-mail</label><input type="email" id="reg_email" placeholder="seu@email.com"></div>
+      <div class="fg" style="margin-bottom:12px"><label>Senha (mínimo 6 caracteres)</label><input type="password" id="reg_pass" placeholder="••••••••"></div>
+      <div class="fg" style="margin-bottom:16px"><label>Clínica / instituição</label><input type="text" id="reg_clinica" placeholder="Nome da clínica (opcional)"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doRegister()" id="btnRegister">Solicitar acesso</button>
+      <p style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center">Após o cadastro, aguarde a aprovação do administrador para acessar o sistema.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ APP ═══════════════════════════════ -->
+<div id="appScreen" style="display:none">
+
+<header>
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  <h1>Avaliação Postural</h1>
+  <span class="sub" id="userEmailBadge"></span>
+  <span class="hbadge" id="hBadge">Nenhum paciente</span>
+  <span class="save-status" id="saveStatus"></span>
+  <button class="hbtn" onclick="openSavedModal()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    Avaliações
+  </button>
+  <button class="hbtn primary" onclick="saveSession(true)" id="btnSave">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+    Salvar
+  </button>
+  <button class="hbtn" onclick="doLogout()" id="btnAdmin" style="display:none">Admin</button>
+  <button class="hbtn" onclick="doLogout()">Sair</button>
+</header>
+
+<div class="step-nav">
+  <button class="snav-btn active" onclick="goStep(0)" id="sn0">1 · Paciente</button>
+  <button class="snav-btn" onclick="goStep(1)" id="sn1">2 · Fotos</button>
+  <button class="snav-btn" onclick="goStep(2)" id="sn2">3 · Simetrógrafo</button>
+  <button class="snav-btn" onclick="goStep(3)" id="sn3">4 · Exportar</button>
+  <button class="snav-btn" onclick="goStep(4)" id="sn4">5 · Laudo PDF</button>
+  <button class="snav-btn" onclick="goStep(5)" id="sn5">6 · Comparativo</button>
+  <button class="snav-btn" onclick="openPacientesModal('list')" id="btnPacientes">Pacientes</button>
+</div>
+
+<div class="content">
+
+<!-- PACIENTE -->
+<div id="step0">
+  <div class="card">
+    <!-- BUSCA DE PACIENTE -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;padding:10px 12px;background:var(--bg);border-radius:var(--r-md);border:1px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:500;color:var(--text-muted);margin-bottom:4px">Vincular paciente cadastrado</div>
+        <div style="font-size:12px;color:var(--text-hint)" id="pacienteVinculado">Nenhum paciente vinculado</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="openPacientesModal('link')">Buscar</button>
+      <button class="btn btn-secondary btn-sm" onclick="desvincularPaciente()" id="btnDesvincular" style="display:none">Desvincular</button>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-size:13px;font-weight:600">Identificação</span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:11px;color:var(--text-muted)">Template:</label>
+        <select id="templateSelect" onchange="applyTemplate(this.value)" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);font-family:inherit">
+          <option value="">Selecionar...</option>
+          <option value="corrida">🏃 Corrida</option>
+          <option value="beach_tennis">🎾 Beach Tennis</option>
+          <option value="futebol">⚽ Futebol</option>
+          <option value="natacao">🏊 Natação</option>
+          <option value="musculacao">🏋️ Musculação</option>
+          <option value="idoso">👴 Idoso</option>
+          <option value="sedentario">💼 Sedentário</option>
+          <option value="pos_cirurgico">🏥 Pós-cirúrgico</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="fg"><label>Nome completo</label><input type="text" id="p_nome" placeholder="Nome do paciente" oninput="updateBadge();scheduleSave()"></div>
+      <div class="fg"><label>Data de nascimento</label><input type="date" id="p_nasc" oninput="calcAge();scheduleSave()"></div>
+    </div>
+    <div class="grid4">
+      <div class="fg"><label>Idade</label><input type="text" id="p_idade" readonly style="background:var(--bg)"></div>
+      <div class="fg"><label>Sexo</label><select id="p_sexo" onchange="scheduleSave()"><option value="">—</option><option>Masculino</option><option>Feminino</option></select></div>
+      <div class="fg"><label>Peso (kg)</label><input type="number" id="p_peso" placeholder="0.0" step="0.1" oninput="calcIMC();scheduleSave()"></div>
+      <div class="fg"><label>Altura (cm)</label><input type="number" id="p_altura" placeholder="0" oninput="calcIMC();scheduleSave()"></div>
+    </div>
+    <div class="grid4">
+      <div class="fg"><label>IMC</label><input type="text" id="p_imc" readonly style="background:var(--bg)"><span id="imc_badge" class="imc-badge" style="display:none"></span></div>
+      <div class="fg"><label>Data da avaliação</label><input type="date" id="p_data" oninput="scheduleSave()"></div>
+      <div class="fg"><label>Profissão / esporte</label><input type="text" id="p_prof" oninput="scheduleSave()"></div>
+      <div class="fg"><label>Avaliador</label><input type="text" id="p_aval" oninput="scheduleSave()"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Anamnese</div>
+    <div class="grid2">
+      <div class="fg"><label>Queixa principal</label><textarea id="p_queixa" oninput="scheduleSave()"></textarea></div>
+      <div class="fg"><label>Histórico de lesões / cirurgias</label><textarea id="p_hist" oninput="scheduleSave()"></textarea></div>
+    </div>
+    <div class="fg"><label>Objetivos</label><input type="text" id="p_obj" oninput="scheduleSave()"></div>
+  </div>
+  <div class="btn-row" style="justify-content:flex-end"><button class="btn btn-primary" onclick="goStep(1)">Próximo →</button></div>
+</div>
+
+<!-- FOTOS -->
+<div id="step1" style="display:none">
+  <div class="card">
+    <div class="card-title">Fotos posturais</div>
+    <div class="photo-grid">
+      <div class="photo-slot" id="slot_anterior" onclick="triggerUp('anterior')"><div class="photo-ph" id="ph_anterior"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="slot-lbl">Anterior</div></div>
+      <div class="photo-slot" id="slot_posterior" onclick="triggerUp('posterior')"><div class="photo-ph" id="ph_posterior"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="slot-lbl">Posterior</div></div>
+      <div class="photo-slot" id="slot_esquerdo" onclick="triggerUp('esquerdo')"><div class="photo-ph" id="ph_esquerdo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="slot-lbl">Lateral Esq.</div></div>
+      <div class="photo-slot" id="slot_direito" onclick="triggerUp('direito')"><div class="photo-ph" id="ph_direito"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="slot-lbl">Lateral Dir.</div></div>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleUp(event)">
+    <p style="font-size:11px;color:var(--text-hint);margin-top:8px">Clique em cada vista para carregar a foto.</p>
+  </div>
+  <div class="btn-row" style="justify-content:space-between">
+    <button class="btn btn-secondary" onclick="goStep(0)">← Voltar</button>
+    <button class="btn btn-primary" onclick="goStep(2)">Próximo →</button>
+  </div>
+</div>
+
+<!-- SIMETRÓGRAFO -->
+<div id="step2" style="display:none">
+<div class="sg-shell">
+
+  <!-- ── MINIATURAS VERTICAIS ── -->
+  <div class="vista-sidebar" id="vistaSidebar"></div>
+
+  <!-- ── CANVAS CENTRAL ── -->
+  <div class="sg-canvas-col">
+    <div class="sg-toolbar">
+      <button class="tbtn" id="mode_single" onclick="setMode('single')" style="font-size:11px">Vista única</button>
+      <button class="tbtn" id="mode_compare" onclick="setMode('compare')" style="font-size:11px">Comparar</button>
+      <button class="tbtn" id="btn_lupa" onclick="toggleLupa()" title="Lupa (L)" style="font-size:11px">🔍</button>
+      <div id="compareSelectors" style="display:none;gap:6px;align-items:center" class="btn-row">
+        <select id="cmpSel1" onchange="renderCompare()" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);font-family:inherit"></select>
+        <span style="font-size:11px;color:var(--text-muted)">vs</span>
+        <select id="cmpSel2" onchange="renderCompare()" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);font-family:inherit"></select>
+      </div>
+      <span style="margin-left:auto;font-size:10px;color:var(--text-hint)">Scroll=zoom · Alt+drag · ← →</span>
+    </div>
+
+    <div id="singleWrap" class="canvas-fill">
+      <canvas id="mainCanvas"
+        onwheel="onWheel(event)"
+        onmousedown="onMouseDown(event)"
+        onmousemove="onMouseMove(event)"
+        onmouseup="onMouseUp(event)"
+        onmouseleave="onMouseLeave(event)"
+        onclick="canvasClick(event)">
+      </canvas>
+      <div class="zoom-info" id="zoomInfo">100%</div>
+      <div id="magnifier"><canvas id="magCanvas"></canvas></div>
+      <div class="snap-dot" id="snapDot"></div>
+    </div>
+
+    <div id="compareWrap" class="canvas-fill" style="display:none;grid-template-columns:1fr 1fr;gap:4px"></div>
+
+    <div class="sg-nav-row">
+      <button class="btn btn-secondary btn-sm" onclick="goStep(1)">← Voltar</button>
+      <button class="btn btn-primary btn-sm" onclick="goStep(3)">Exportar →</button>
+    </div>
+  </div><!-- /sg-canvas-col -->
+
+  <!-- ── PAINEL 3 ABAS ── -->
+  <div class="sg-panel-col" id="sgPanel">
+    <div class="panel-tabs">
+      <button class="panel-tab active" id="ptab_linhas" onclick="switchPanelTab('linhas')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="0" y1="12" x2="24" y2="12"/><line x1="0" y1="6" x2="24" y2="6"/><line x1="0" y1="18" x2="24" y2="18"/></svg>
+        Linhas
+      </button>
+      <button class="panel-tab" id="ptab_ferramentas" onclick="switchPanelTab('ferramentas')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Ferramentas
+      </button>
+      <button class="panel-tab" id="ptab_medicoes" onclick="switchPanelTab('medicoes')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Medições
+      </button>
+    </div>
+
+    <!-- ═══ ABA LINHAS ═══ -->
+    <div class="panel-content active" id="pc_linhas">
+
+      <div class="psec">
+        <div class="ptitle">Modelo de linhas</div>
+        <div style="display:flex;gap:4px">
+          <select class="model-select" id="modelSelect" style="flex:1"><option value="">Selecionar...</option></select>
+          <button class="tbtn" onclick="loadModel()" title="Carregar">↓</button>
+          <button class="tbtn" onclick="saveModel()" title="Salvar">+</button>
+          <button class="tbtn danger" onclick="deleteModel()" title="Excluir">×</button>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Eixo vertical</div>
+        <div class="toggle-row" style="margin-bottom:8px">
+          <label for="vAxisOn" style="font-size:11px;color:var(--text-muted)">Mostrar eixo</label>
+          <label class="toggle"><input type="checkbox" id="vAxisOn" checked onchange="toggleVAxis()"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="vAxisControls">
+          <div class="ctrl"><label>Posição</label><input type="range" min="0" max="100" value="50" step="0.1" id="vPos" oninput="syncV(this.value,'vPosN')"><input type="number" class="num" id="vPosN" value="50" min="0" max="100" step="0.1" oninput="syncV(this.value,'vPos')"></div>
+          <p style="font-size:10px;color:var(--text-hint);margin-bottom:4px">Cor</p>
+          <div class="cdot-grid">
+            <button class="cdot on" id="vc_r" style="background:#ff4444" onclick="setVC('#ff4444','vc_r')"></button>
+            <button class="cdot" id="vc_w" style="background:#fff;border-color:#ccc" onclick="setVC('#ffffff','vc_w')"></button>
+            <button class="cdot" id="vc_c" style="background:#00e5ff" onclick="setVC('#00e5ff','vc_c')"></button>
+            <button class="cdot" id="vc_y" style="background:#ffff00" onclick="setVC('#ffff00','vc_y')"></button>
+            <button class="cdot" id="vc_o" style="background:#ff922b" onclick="setVC('#ff922b','vc_o')"></button>
+            <button class="cdot" id="vc_p" style="background:#cc5de8" onclick="setVC('#cc5de8','vc_p')"></button>
+            <button class="cdot" id="vc_b" style="background:#74c0fc" onclick="setVC('#74c0fc','vc_b')"></button>
+            <button class="cdot" id="vc_gr" style="background:#adb5bd;border-color:#868e96" onclick="setVC('#adb5bd','vc_gr')"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Linhas horizontais</div>
+        <div id="hLinesCtrl"></div>
+        <button class="add-hl" onclick="addHL()">+ adicionar linha</button>
+        <p style="font-size:10px;color:var(--text-hint);margin:8px 0 4px">Cor</p>
+        <div class="cdot-grid">
+          <button class="cdot on" id="hc_c" style="background:#00e5ff" onclick="setHC('#00e5ff','hc_c')"></button>
+          <button class="cdot" id="hc_r" style="background:#ff4444" onclick="setHC('#ff4444','hc_r')"></button>
+          <button class="cdot" id="hc_g" style="background:#00ff88" onclick="setHC('#00ff88','hc_g')"></button>
+          <button class="cdot" id="hc_w" style="background:#fff;border-color:#ccc" onclick="setHC('#ffffff','hc_w')"></button>
+          <button class="cdot" id="hc_y" style="background:#ffff00" onclick="setHC('#ffff00','hc_y')"></button>
+          <button class="cdot" id="hc_o" style="background:#ff922b" onclick="setHC('#ff922b','hc_o')"></button>
+          <button class="cdot" id="hc_p" style="background:#cc5de8" onclick="setHC('#cc5de8','hc_p')"></button>
+          <button class="cdot" id="hc_b" style="background:#74c0fc" onclick="setHC('#74c0fc','hc_b')"></button>
+          <button class="cdot" id="hc_gr" style="background:#adb5bd;border-color:#868e96" onclick="setHC('#adb5bd','hc_gr')"></button>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Aparência</div>
+        <div class="ctrl"><label>Opacidade</label><input type="range" min="10" max="100" value="75" step="1" id="lOp" oninput="syncOp(this.value,'lOpN')"><input type="number" class="num" id="lOpN" value="75" min="10" max="100" step="1" oninput="syncOp(this.value,'lOp')"></div>
+        <div class="ctrl"><label>Espessura</label><input type="range" min="0.5" max="5" value="1" step="0.5" id="lW" oninput="syncLW(this.value,'lWN')"><input type="number" class="num" id="lWN" value="1" min="0.5" max="5" step="0.5" oninput="syncLW(this.value,'lW')"></div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Grade do simetrógrafo</div>
+        <div class="toggle-row">
+          <label for="gradeOn" style="font-size:11px;color:var(--text-muted)">Ativar grade</label>
+          <label class="toggle"><input type="checkbox" id="gradeOn" onchange="toggleGrade()"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-row">
+          <label for="linesOn" style="font-size:11px;color:var(--text-muted)">Mostrar linhas de referência</label>
+          <label class="toggle"><input type="checkbox" id="linesOn" checked onchange="toggleLines()"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="gradeControls" style="display:none;margin-top:8px">
+          <div style="display:flex;gap:5px;margin-bottom:8px">
+            <button class="tbtn on" id="grade_simples" onclick="setGradeType('simples')" style="flex:1;font-size:10px">Simples</button>
+            <button class="tbtn" id="grade_central" onclick="setGradeType('central')" style="flex:1;font-size:10px">Eixo central</button>
+          </div>
+          <div class="ctrl"><label>Espaçamento</label><input type="range" min="2" max="25" value="10" step="0.5" id="gradeSpacing" oninput="syncGrade('spacing',this.value,'gradeSpacingN')"><input type="number" class="num" id="gradeSpacingN" value="10" min="2" max="25" step="0.5" oninput="syncGrade('spacing',this.value,'gradeSpacing')"></div>
+          <div class="ctrl"><label>Opacidade</label><input type="range" min="3" max="80" value="20" step="1" id="gradeOp" oninput="syncGrade('op',this.value,'gradeOpN')"><input type="number" class="num" id="gradeOpN" value="20" min="3" max="80" step="1" oninput="syncGrade('op',this.value,'gradeOp')"></div>
+          <div class="ctrl"><label>Espessura</label><input type="range" min="0.5" max="3" value="0.5" step="0.5" id="gradeLW" oninput="syncGrade('lw',this.value,'gradeLWN')"><input type="number" class="num" id="gradeLWN" value="0.5" min="0.5" max="3" step="0.5" oninput="syncGrade('lw',this.value,'gradeLW')"></div>
+          <div class="ctrl" style="margin-bottom:6px"><label>Estilo</label>
+            <select id="gradeStyle" onchange="syncGradeStyle(this.value)" style="flex:1;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:inherit">
+              <option value="solid">Sólido</option><option value="dashed">Tracejado</option><option value="dotted">Pontilhado</option>
+            </select>
+          </div>
+          <p style="font-size:10px;font-weight:600;color:var(--text-hint);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Posição e tamanho</p>
+          <div class="ctrl"><label>Offset X</label><input type="range" min="-50" max="50" value="0" step="0.5" id="gradeOffX" oninput="syncGrade('offX',this.value,'gradeOffXN')"><input type="number" class="num" id="gradeOffXN" value="0" min="-50" max="50" step="0.5" oninput="syncGrade('offX',this.value,'gradeOffX')"></div>
+          <div class="ctrl"><label>Offset Y</label><input type="range" min="-50" max="50" value="0" step="0.5" id="gradeOffY" oninput="syncGrade('offY',this.value,'gradeOffYN')"><input type="number" class="num" id="gradeOffYN" value="0" min="-50" max="50" step="0.5" oninput="syncGrade('offY',this.value,'gradeOffY')"></div>
+          <div class="ctrl"><label>Largura %</label><input type="range" min="10" max="100" value="100" step="1" id="gradeW" oninput="syncGrade('w',this.value,'gradeWN')"><input type="number" class="num" id="gradeWN" value="100" min="10" max="100" step="1" oninput="syncGrade('w',this.value,'gradeW')"></div>
+          <div class="ctrl"><label>Altura %</label><input type="range" min="10" max="100" value="100" step="1" id="gradeH" oninput="syncGrade('h',this.value,'gradeHN')"><input type="number" class="num" id="gradeHN" value="100" min="10" max="100" step="1" oninput="syncGrade('h',this.value,'gradeH')"></div>
+          <button class="add-hl" onclick="resetGradePos()" style="margin-bottom:10px">↺ Centralizar grade</button>
+          <div class="toggle-row">
+            <label for="gradeBorderOn" style="font-size:11px;color:var(--text-muted)">Mostrar borda</label>
+            <label class="toggle"><input type="checkbox" id="gradeBorderOn" onchange="syncGradeBorder('on',this.checked)"><span class="toggle-slider"></span></label>
+          </div>
+          <div id="gradeBorderControls" style="display:none">
+            <div class="ctrl"><label>Espessura</label><input type="range" min="1" max="8" value="2" step="0.5" id="gradeBorderLW" oninput="syncGradeBorder('lw',this.value)"><input type="number" class="num" id="gradeBorderLWN" value="2" min="1" max="8" step="0.5" oninput="syncGradeBorder('lw',this.value)"></div>
+            <div class="ctrl"><label>Opacidade</label><input type="range" min="10" max="100" value="80" step="1" id="gradeBorderOp" oninput="syncGradeBorder('op',this.value)"><input type="number" class="num" id="gradeBorderOpN" value="80" min="10" max="100" step="1" oninput="syncGradeBorder('op',this.value)"></div>
+            <div class="ctrl" style="margin-bottom:6px"><label>Estilo</label>
+              <select id="gradeBorderStyle" onchange="syncGradeBorder('style',this.value)" style="flex:1;font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:inherit">
+                <option value="solid">Sólido</option><option value="dashed">Tracejado</option><option value="dotted">Pontilhado</option>
+              </select>
+            </div>
+            <p style="font-size:10px;color:var(--text-hint);margin-bottom:4px">Cor da borda</p>
+            <div class="cdot-grid">
+              <button class="cdot on" id="gbc_w" style="background:#fff;border-color:#ccc" onclick="setGradeBorderColor('#ffffff','gbc_w')"></button>
+              <button class="cdot" id="gbc_c" style="background:#00e5ff" onclick="setGradeBorderColor('#00e5ff','gbc_c')"></button>
+              <button class="cdot" id="gbc_y" style="background:#ffff00" onclick="setGradeBorderColor('#ffff00','gbc_y')"></button>
+              <button class="cdot" id="gbc_g" style="background:#00ff88" onclick="setGradeBorderColor('#00ff88','gbc_g')"></button>
+              <button class="cdot" id="gbc_r" style="background:#ff4444" onclick="setGradeBorderColor('#ff4444','gbc_r')"></button>
+              <button class="cdot" id="gbc_o" style="background:#ff922b" onclick="setGradeBorderColor('#ff922b','gbc_o')"></button>
+              <button class="cdot" id="gbc_p" style="background:#cc5de8" onclick="setGradeBorderColor('#cc5de8','gbc_p')"></button>
+              <button class="cdot" id="gbc_b" style="background:#74c0fc" onclick="setGradeBorderColor('#74c0fc','gbc_b')"></button>
+              <button class="cdot" id="gbc_gr" style="background:#adb5bd;border-color:#868e96" onclick="setGradeBorderColor('#adb5bd','gbc_gr')"></button>
+            </div>
+          </div>
+          <p style="font-size:10px;color:var(--text-hint);margin:8px 0 4px">Cor da grade</p>
+          <div class="cdot-grid">
+            <button class="cdot on" id="gc_w" style="background:#fff;border-color:#ccc" onclick="setGradeColor('#ffffff','gc_w')"></button>
+            <button class="cdot" id="gc_c" style="background:#00e5ff" onclick="setGradeColor('#00e5ff','gc_c')"></button>
+            <button class="cdot" id="gc_y" style="background:#ffff00" onclick="setGradeColor('#ffff00','gc_y')"></button>
+            <button class="cdot" id="gc_g" style="background:#00ff88" onclick="setGradeColor('#00ff88','gc_g')"></button>
+            <button class="cdot" id="gc_r" style="background:#ff4444" onclick="setGradeColor('#ff4444','gc_r')"></button>
+            <button class="cdot" id="gc_o" style="background:#ff922b" onclick="setGradeColor('#ff922b','gc_o')"></button>
+            <button class="cdot" id="gc_p" style="background:#cc5de8" onclick="setGradeColor('#cc5de8','gc_p')"></button>
+            <button class="cdot" id="gc_b" style="background:#74c0fc" onclick="setGradeColor('#74c0fc','gc_b')"></button>
+            <button class="cdot" id="gc_gr" style="background:#adb5bd;border-color:#868e96" onclick="setGradeColor('#adb5bd','gc_gr')"></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Calibração</div>
+        <p style="font-size:10px;color:var(--text-hint);margin-bottom:6px">Marque 2 pontos de distância conhecida e informe o valor em cm.</p>
+        <div class="toggle-row">
+          <label for="calibOn" style="font-size:11px;color:var(--text-muted)">Ativar calibração</label>
+          <label class="toggle"><input type="checkbox" id="calibOn" onchange="toggleCalib()"><span class="toggle-slider"></span></label>
+        </div>
+        <div id="calibControls" style="display:none;margin-top:6px">
+          <div class="hint" id="calibHint">Clique em 2 pontos na foto para definir a referência</div>
+          <div class="ctrl" style="margin-bottom:6px">
+            <label>Real</label>
+            <input type="number" id="calibCm" placeholder="cm" step="0.1" min="1" style="flex:1;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);font-family:inherit" oninput="updateCalib()">
+            <span style="font-size:11px;color:var(--text-muted)">cm</span>
+          </div>
+          <div id="calibResult" style="font-size:11px;color:var(--success-text);font-weight:500;margin-bottom:4px"></div>
+          <button class="add-hl" onclick="resetCalib()">↺ Resetar</button>
+        </div>
+      </div>
+
+    </div><!-- /pc_linhas -->
+
+    <!-- ═══ ABA FERRAMENTAS ═══ -->
+    <div class="panel-content" id="pc_ferramentas">
+
+      <div class="psec">
+        <div class="ptitle">Ferramenta ativa</div>
+        <div class="tool-grid">
+          <button class="tool-card on" id="tl_none" onclick="setTool('none')">
+            <span class="tc-icon">🖱️</span><span class="tc-name">Navegar</span><span class="tc-key">ESC</span>
+          </button>
+          <button class="tool-card" id="tl_lm" onclick="setTool('lm')">
+            <span class="tc-icon">📍</span><span class="tc-name">Marcar ponto</span><span class="tc-key">M</span>
+          </button>
+          <button class="tool-card" id="tl_angle" onclick="setTool('angle')">
+            <span class="tc-icon">📐</span><span class="tc-name">Ângulo</span><span class="tc-key">A</span>
+          </button>
+          <button class="tool-card" id="tl_ruler" onclick="setTool('ruler')">
+            <span class="tc-icon">📏</span><span class="tc-name">Régua</span><span class="tc-key">R</span>
+          </button>
+          <button class="tool-card" id="tl_tri" onclick="setTool('tri')">
+            <span class="tc-icon">🔺</span><span class="tc-name">Triângulo</span><span class="tc-key">T</span>
+          </button>
+          <button class="tool-card" id="tl_annot" onclick="setTool('annot')">
+            <span class="tc-icon">📝</span><span class="tc-name">Texto</span><span class="tc-key">N</span>
+          </button>
+        </div>
+        <div class="hint" id="toolHint">Selecione uma ferramenta e clique na foto</div>
+        <button class="tool-clear" onclick="clearAll()">🗑 Limpar marcações desta vista</button>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Nome do ponto</div>
+        <input type="text" class="lm-input" id="lmName" value="Ombro D">
+        <div class="chips">
+          <span class="chip" onclick="setLMN('Ombro D')">Ombro D</span><span class="chip" onclick="setLMN('Ombro E')">Ombro E</span>
+          <span class="chip" onclick="setLMN('EIAS D')">EIAS D</span><span class="chip" onclick="setLMN('EIAS E')">EIAS E</span>
+          <span class="chip" onclick="setLMN('Trocânter D')">Troc. D</span><span class="chip" onclick="setLMN('Trocânter E')">Troc. E</span>
+          <span class="chip" onclick="setLMN('Joelho D')">Joelho D</span><span class="chip" onclick="setLMN('Joelho E')">Joelho E</span>
+          <span class="chip" onclick="setLMN('Tornozelo D')">Torn. D</span><span class="chip" onclick="setLMN('Tornozelo E')">Torn. E</span>
+          <span class="chip" onclick="setLMN('C7')">C7</span>
+          <span class="chip" onclick="setLMN('Tragus D')">Tragus D</span><span class="chip" onclick="setLMN('Tragus E')">Tragus E</span>
+          <span class="chip" onclick="setLMN('Acrômio D')">Acrômio D</span><span class="chip" onclick="setLMN('Acrômio E')">Acrômio E</span>
+        </div>
+        <div style="margin-top:6px">
+          <p style="font-size:10px;color:var(--text-hint);margin-bottom:5px">Tamanho do ponto</p>
+          <div class="lm-sz-row">
+            <button class="lm-sz on" id="lmsz_1" onclick="setLMSize(1)" title="Minúsculo" style="font-size:5px">⬤</button>
+            <button class="lm-sz" id="lmsz_2" onclick="setLMSize(2)" title="Pequeno" style="font-size:8px">⬤</button>
+            <button class="lm-sz" id="lmsz_3" onclick="setLMSize(3)" title="Médio" style="font-size:12px">⬤</button>
+            <button class="lm-sz" id="lmsz_4" onclick="setLMSize(4)" title="Grande" style="font-size:16px">⬤</button>
+            <button class="lm-sz" id="lmsz_5" onclick="setLMSize(5)" title="Máximo" style="font-size:20px">⬤</button>
+          </div>
+        </div>
+        <div style="margin-top:6px">
+          <p style="font-size:10px;color:var(--text-hint);margin-bottom:5px">Borda do ponto</p>
+          <div style="display:flex;gap:6px">
+            <button id="lmbc_white" onclick="setLMBorder('white')" title="Borda branca"
+              style="flex:1;padding:4px 0;font-size:11px;border-radius:var(--r-sm);cursor:pointer;
+                     border:2px solid var(--accent);background:var(--surface);color:var(--text);font-family:inherit">
+              ○ Branca
+            </button>
+            <button id="lmbc_black" onclick="setLMBorder('black')" title="Borda preta"
+              style="flex:1;padding:4px 0;font-size:11px;border-radius:var(--r-sm);cursor:pointer;
+                     border:2px solid var(--border);background:var(--surface);color:var(--text);font-family:inherit">
+              ● Preta
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Triângulo da taille</div>
+        <div style="display:flex;gap:5px;margin-bottom:6px">
+          <button class="tbtn" id="tri_side_d" onclick="setTriSide('D')" style="flex:1;background:#dbeafe;color:#1e40af;border-color:#93c5fd">● Lado D</button>
+          <button class="tbtn" id="tri_side_e" onclick="setTriSide('E')" style="flex:1">● Lado E</button>
+        </div>
+      </div>
+
+      <div class="psec">
+        <div class="ptitle">Atalhos</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">M</b> Ponto</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">A</b> Ângulo</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">R</b> Régua</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">T</b> Triângulo</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">N</b> Texto</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">L</b> Lupa</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">G</b> Grade</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">← →</b> Vista</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">Ctrl+Z</b> Desfazer</div>
+          <div style="font-size:10px;color:var(--text-muted)"><b style="color:var(--text)">Ctrl+S</b> Salvar</div>
+        </div>
+      </div>
+
+    </div><!-- /pc_ferramentas -->
+
+    <!-- ═══ ABA MEDIÇÕES ═══ -->
+    <div class="panel-content" id="pc_medicoes">
+
+      <div class="result-section">
+        <div class="result-hdr">
+          <span class="result-title">Pontos marcados</span>
+          <button class="result-clear" onclick="if(landmarks[curView]?.length&&confirm('Limpar pontos?')){landmarks[curView]=[];angles[curView]=[];renderLMList();renderAngles();draw();}">limpar</button>
+        </div>
+        <div class="lm-list" id="lmList"><p style="font-size:10px;color:var(--text-hint)">Use "Marcar ponto"</p></div>
+      </div>
+
+
+      <div class="result-section" id="simetriaSection" style="display:none">
+        <div class="result-hdr">
+          <span class="result-title">Simetria automática</span>
+        </div>
+        <div class="sym-section" id="simetriaList"></div>
+      </div>
+
+      <div class="result-section">
+        <div class="result-hdr">
+          <span class="result-title">Ângulos</span>
+          <button class="result-clear" onclick="if(angles[curView]?.length&&confirm('Limpar ângulos?')){angles[curView]=[];renderAngles();draw();}">limpar</button>
+        </div>
+        <div id="angleList"><p style="font-size:10px;color:var(--text-hint)">Use "Ângulo" → 3 pontos</p></div>
+      </div>
+
+      <div class="result-section">
+        <div class="result-hdr">
+          <span class="result-title">Réguas</span>
+          <button class="result-clear" onclick="if(rulers[curView]?.length&&confirm('Limpar réguas?')){rulers[curView]=[];renderRulers();draw();}">limpar</button>
+        </div>
+        <div id="rulerList"><p style="font-size:10px;color:var(--text-hint)">Use "Régua" → 2 pontos</p></div>
+      </div>
+
+      <div class="result-section">
+        <div class="result-hdr">
+          <span class="result-title">Triângulo da taille</span>
+          <button class="result-clear" onclick="if(triangles[curView]?.length&&confirm('Limpar?')){triangles[curView]=[];renderTriList();draw();}">limpar</button>
+        </div>
+        <div id="triList"><p style="font-size:10px;color:var(--text-hint)">Use "Triângulo" → 3 pontos por lado</p></div>
+      </div>
+
+      <div class="result-section">
+        <div class="result-hdr">
+          <span class="result-title">Anotações</span>
+          <button class="result-clear" onclick="if(annotations[curView]?.length&&confirm('Limpar?')){annotations[curView]=[];renderAnnotList();draw();}">limpar</button>
+        </div>
+        <div id="annotList"><p style="font-size:10px;color:var(--text-hint)">Use "Texto" → clique na foto</p></div>
+      </div>
+
+    </div><!-- /pc_medicoes -->
+
+  </div><!-- /sg-panel-col -->
+
+</div><!-- /sg-shell -->
+</div>
+<!-- EXPORTAR -->
+<div id="step3" style="display:none">
+  <div class="card">
+    <div class="card-title">Exportar fotos com simetrógrafo e landmarks</div>
+    <div class="btn-row" style="margin-bottom:14px">
+      <button class="btn btn-primary" onclick="buildExports()">↻ Gerar imagens</button>
+    </div>
+    <div class="export-grid" id="exportGrid"><p style="font-size:12px;color:var(--text-hint);grid-column:1/-1">Clique em "Gerar imagens".</p></div>
+  </div>
+  <div class="btn-row" style="justify-content:space-between">
+    <button class="btn btn-secondary" onclick="goStep(2)">← Voltar</button>
+    <button class="btn btn-primary" onclick="goStep(4)">Laudo PDF →</button>
+  </div>
+</div>
+
+<!-- LAUDO PDF -->
+<div id="step4" style="display:none">
+  <div class="grid2" style="gap:12px">
+    <div>
+      <div class="card">
+        <div class="card-title">Cabeçalho da clínica</div>
+        <div class="fg" style="margin-bottom:10px"><label>Nome da clínica</label><input type="text" id="pdf_clinica" oninput="scheduleSave()"></div>
+        <div class="fg" style="margin-bottom:10px"><label>Endereço / contato</label><input type="text" id="pdf_endereco" oninput="scheduleSave()"></div>
+        <div class="fg" style="margin-bottom:10px"><label>Logo (PNG/JPG)</label><input type="file" id="pdf_logo" accept="image/*" onchange="loadLogo(event)" style="font-size:12px;padding:4px"></div>
+        <div id="logo_preview" style="display:none;margin-top:6px">
+          <img id="logo_img" style="max-height:60px;max-width:180px;border-radius:4px;border:1px solid var(--border)">
+          <button onclick="removeLogo()" style="font-size:11px;background:none;border:none;cursor:pointer;color:var(--danger-text);margin-left:8px">Remover</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Achados posturais</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">Plano frontal</div>
+        <div style="margin-bottom:6px;line-height:1.8">
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Elevação de ombro D')">↗ Ombro D elevado</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Elevação de ombro E')">↗ Ombro E elevado</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Inclinação pélvica com crista ilíaca D mais elevada')">Pelve D alta</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Inclinação pélvica com crista ilíaca E mais elevada')">Pelve E alta</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Joelho valgo bilateral')">Valgo bilateral</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Joelho varo bilateral')">Varo bilateral</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Escápula alada D')">Escápula alada D</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Escápula alada E')">Escápula alada E</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Desvio lateral de coluna com convexidade D')">Escoliose D</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Desvio lateral de coluna com convexidade E')">Escoliose E</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Assimetria do triângulo da taille')">Assimetria taille</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_frontal','Pronação subtalar bilateral')">Pronação bilateral</span>
+        </div>
+        <textarea id="pdf_achados_frontal" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;min-height:80px" oninput="scheduleSave()"></textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin:10px 0 4px">Plano sagital</div>
+        <div style="margin-bottom:6px;line-height:1.8">
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Anteriorização da cabeça')">Anteriorização cabeça</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Hiperlordose cervical')">Hiperlordose cervical</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Retificação cervical')">Retificação cervical</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Hipercifose torácica')">Hipercifose torácica</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Retificação torácica')">Retificação torácica</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Hiperlordose lombar')">Hiperlordose lombar</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Retificação lombar')">Retificação lombar</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Anteversão pélvica')">Anteversão pélvica</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Retroversão pélvica')">Retroversão pélvica</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Protração bilateral de ombros')">Protração ombros</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Hiperextensão de joelho bilateral')">Hiperextensão joelho</span>
+          <span class="achado-chip" onclick="addAchado('pdf_achados_sagital','Flexo de joelho bilateral')">Flexo joelho</span>
+        </div>
+        <textarea id="pdf_achados_sagital" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;min-height:80px" oninput="scheduleSave()"></textarea>
+        <div style="font-size:12px;color:var(--text-muted);margin:10px 0 4px">Conclusão e conduta</div>
+        <div style="margin-bottom:6px;line-height:1.8">
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Padrão postural anteriorizado com sobrecarga em coluna cervical e lombar.')">Padrão anteriorizado</span>
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Desequilíbrio muscular com predominância de encurtamento de cadeia posterior.')">Cadeia posterior encurtada</span>
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Assimetria pélvica compatível com desequilíbrio de membros inferiores.')">Assimetria pélvica</span>
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Conduta: fortalecimento de core e alongamento de cadeia anterior.')">Conduta core</span>
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Conduta: reeducação postural global com foco em alinhamento sagital.')">Conduta RPG</span>
+          <span class="achado-chip" onclick="addAchado('pdf_conclusao','Reavaliar em 30 dias após início do protocolo de tratamento.')">Reavaliar em 30 dias</span>
+        </div>
+        <textarea id="pdf_conclusao" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;min-height:80px" oninput="scheduleSave()"></textarea>
+      </div>
+      <div class="card">
+        <div class="card-title">Assinatura digital</div>
+        <canvas id="sigCanvas" width="420" height="120" style="border:1px solid var(--border);border-radius:var(--r-md);background:#fff;display:block;cursor:crosshair;touch-action:none;width:100%;max-width:420px"></canvas>
+        <div class="btn-row" style="margin-top:6px"><button class="btn btn-secondary btn-sm" onclick="clearSig()">Limpar assinatura</button></div>
+      </div>
+      <div class="btn-row" style="justify-content:space-between;margin-top:4px">
+        <div class="btn-row">
+          <button class="btn btn-secondary" onclick="goStep(3)">← Voltar</button>
+          <button class="btn btn-secondary" onclick="markFinalizada()">✓ Marcar como finalizada</button>
+        </div>
+        <button class="btn btn-primary" onclick="generatePDF()">⬇ Gerar PDF</button>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="padding:10px">
+        <div class="card-title" style="margin-bottom:6px">Pré-visualização</div>
+        <p style="font-size:11px;color:var(--text-muted);margin-bottom:8px">Clique "Gerar PDF" → navegador abre impressão → "Salvar como PDF".</p>
+        <div id="pdfPreview" style="border:1px solid var(--border);border-radius:var(--r-md);padding:16px;background:#fff;color:#111;min-height:400px;overflow:auto">
+          <p style="color:#aaa;text-align:center;padding-top:2rem;font-size:12px">Clique em "Gerar PDF" para visualizar</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- content -->
+</div><!-- appScreen -->
+
+
+<!-- COMPARATIVO ANTES/DEPOIS -->
+<div id="step5" style="display:none">
+  <div class="card">
+    <div class="card-title">Relatório comparativo — Antes e depois</div>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:14px">Selecione duas avaliações do mesmo paciente para gerar um PDF comparativo lado a lado.</p>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="fg">
+        <label>Avaliação 1 — Antes</label>
+        <select id="cmp_aval1" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">
+          <option value="">Selecionar avaliação...</option>
+        </select>
+        <div id="cmp_preview1" style="margin-top:8px;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px" id="cmp_label1"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="cmp_fotos1"></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Avaliação 2 — Depois</label>
+        <select id="cmp_aval2" style="font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text)">
+          <option value="">Selecionar avaliação...</option>
+        </select>
+        <div id="cmp_preview2" style="margin-top:8px;display:none">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px" id="cmp_label2"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px" id="cmp_fotos2"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:14px">
+      <label>Observações do comparativo</label>
+      <textarea id="cmp_obs" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;min-height:80px" placeholder="Descreva a evolução observada entre as duas avaliações..."></textarea>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="loadCmpAvals()">↻ Carregar avaliações</button>
+      <button class="btn btn-primary" onclick="generateCmpPDF()">⬇ Gerar PDF comparativo</button>
+    </div>
+  </div>
+  <div class="btn-row" style="justify-content:flex-start;margin-top:4px">
+    <button class="btn btn-secondary" onclick="goStep(4)">← Voltar</button>
+  </div>
+</div>
+
+<!-- MODAL: Avaliações salvas -->
+<div class="modal-bg" id="savedModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Avaliações salvas</span>
+      <button class="modal-close" onclick="closeSavedModal()">×</button>
+    </div>
+    <div class="modal-body" id="savedList"><p style="font-size:12px;color:var(--text-hint)">Carregando...</p></div>
+    <div class="modal-footer">
+      <div class="btn-row" style="justify-content:space-between;align-items:center">
+        <span>As avaliações são salvas na nuvem — acessíveis de qualquer dispositivo.</span>
+        <button class="btn btn-primary btn-sm" onclick="newSession()">+ Nova avaliação</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Pacientes -->
+<div class="modal-bg" id="pacientesModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-header">
+      <span id="pacModalTitle">Pacientes</span>
+      <button class="modal-close" onclick="closePacModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- tabs -->
+      <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:var(--r-md);overflow:hidden;margin-bottom:14px">
+        <button class="auth-tab active" id="ptab_list" onclick="switchPacTab('list')" style="flex:1">Lista</button>
+        <button class="auth-tab" id="ptab_new" onclick="switchPacTab('new')" style="flex:1">Novo paciente</button>
+      </div>
+      <!-- lista -->
+      <div id="pacListSection">
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="search-input" id="pacSearch" placeholder="Buscar por nome..." oninput="filterPacientes(this.value)">
+        </div>
+        <div id="pacList"><p style="font-size:12px;color:var(--text-hint)">Carregando...</p></div>
+      </div>
+      <!-- novo paciente -->
+      <div id="pacNewSection" style="display:none">
+        <div class="grid2">
+          <div class="fg"><label>Nome completo *</label><input type="text" id="pac_nome" placeholder="Nome do paciente"></div>
+          <div class="fg"><label>Data de nascimento</label><input type="date" id="pac_nasc"></div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="fg"><label>Sexo</label><select id="pac_sexo"><option value="">—</option><option>Masculino</option><option>Feminino</option></select></div>
+          <div class="fg"><label>Telefone</label><input type="text" id="pac_tel" placeholder="(00) 00000-0000"></div>
+        </div>
+        <div class="grid2" style="margin-top:10px">
+          <div class="fg"><label>E-mail</label><input type="text" id="pac_email" placeholder="email@exemplo.com"></div>
+          <div class="fg"><label>Profissão / esporte</label><input type="text" id="pac_prof" placeholder="Ex: corredor, atleta..."></div>
+        </div>
+        <div class="fg" style="margin-top:10px"><label>Observações</label><textarea id="pac_obs" style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--bg);color:var(--text);resize:vertical;font-family:inherit;min-height:60px"></textarea></div>
+        <div class="btn-row" style="margin-top:12px;justify-content:flex-end">
+          <button class="btn btn-secondary" onclick="switchPacTab('list')">Cancelar</button>
+          <button class="btn btn-primary" onclick="savePaciente()">Salvar paciente</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Admin -->
+<div class="modal-bg" id="adminModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span>Administração de usuários</span>
+      <button class="modal-close" onclick="closeAdminModal()">×</button>
+    </div>
+    <div class="modal-body" id="adminList"><p style="font-size:12px;color:var(--text-hint)">Carregando...</p></div>
+    <div class="modal-footer">Apenas usuários aprovados podem acessar o sistema.</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── SUPABASE ───
+const SB_URL='https://kcovgtooekctpdrohqhj.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtjb3ZndG9vZWtjdHBkcm9ocWhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5NDg5NTEsImV4cCI6MjA5NjUyNDk1MX0.7PpG1yCiSpifnvkEw2qLWIyL3tcbX_LM3SesAqkM_z8';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// ADMIN email — único usuário que pode aprovar/revogar
+const ADMIN_EMAIL='aftcanuto@gmail.com';
+
+let currentUser=null, currentProfile=null, currentAvalId=null;
+let saveTimer=null;
+
+// ─── AUTH ───
+function switchAuthTab(tab){
+  document.getElementById('tab_login').classList.toggle('active',tab==='login');
+  document.getElementById('tab_register').classList.toggle('active',tab==='register');
+  document.getElementById('loginForm').style.display=tab==='login'?'block':'none';
+  document.getElementById('registerForm').style.display=tab==='register'?'block':'none';
+  setAuthMsg('','');
+}
+
+function setAuthMsg(msg,type){
+  const el=document.getElementById('authMsg');
+  el.textContent=msg;el.className='auth-msg'+(type?' '+type:'');
+}
+
+async function doLogin(){
+  const email=document.getElementById('login_email').value.trim();
+  const pass=document.getElementById('login_pass').value;
+  if(!email||!pass){setAuthMsg('Preencha e-mail e senha.','error');return;}
+  const btn=document.getElementById('btnLogin');
+  btn.innerHTML='<span class="spin"></span> Entrando...';btn.disabled=true;
+  const {data,error}=await sb.auth.signInWithPassword({email,password:pass});
+  btn.innerHTML='Entrar';btn.disabled=false;
+  if(error){setAuthMsg('E-mail ou senha incorretos.','error');return;}
+  await checkUserAndLoad(data.user);
+}
+
+async function doRegister(){
+  const nome=document.getElementById('reg_nome').value.trim();
+  const email=document.getElementById('reg_email').value.trim();
+  const pass=document.getElementById('reg_pass').value;
+  const clinica=document.getElementById('reg_clinica').value.trim();
+  if(!nome||!email||!pass){setAuthMsg('Preencha todos os campos obrigatórios.','error');return;}
+  if(pass.length<6){setAuthMsg('A senha deve ter pelo menos 6 caracteres.','error');return;}
+  const btn=document.getElementById('btnRegister');
+  btn.innerHTML='<span class="spin"></span> Enviando...';btn.disabled=true;
+  const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nome,clinica}}});
+  btn.innerHTML='Solicitar acesso';btn.disabled=false;
+  if(error){setAuthMsg(error.message,'error');return;}
+  setAuthMsg('Cadastro realizado! Aguarde a aprovação do administrador para acessar o sistema.','success');
+}
+
+async function checkUserAndLoad(user){
+  currentUser=user;
+  // busca perfil
+  const {data:profile}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  currentProfile=profile;
+  if(!profile||profile.role==='pending'){
+    setAuthMsg('Seu acesso ainda não foi aprovado. Aguarde a aprovação do administrador.','warning');
+    await sb.auth.signOut();currentUser=null;currentProfile=null;return;
+  }
+  if(profile.role==='revoked'){
+    setAuthMsg('Seu acesso foi revogado. Entre em contato com o administrador.','error');
+    await sb.auth.signOut();currentUser=null;currentProfile=null;return;
+  }
+  // aprovado — abre o app
+  document.getElementById('authScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
+  document.getElementById('userEmailBadge').textContent=user.email;
+  if(user.email===ADMIN_EMAIL){
+    document.getElementById('btnAdmin').style.display='flex';
+    document.getElementById('btnAdmin').onclick=openAdminModal;
+    document.getElementById('btnAdmin').textContent='Admin';
+  }
+  newSession();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  currentUser=null;currentProfile=null;currentAvalId=null;
+  document.getElementById('appScreen').style.display='none';
+  document.getElementById('authScreen').style.display='flex';
+  setAuthMsg('','');
+}
+
+// ─── APP STATE ───
+const VIEWS=['anterior','posterior','esquerdo','direito'];
+const VL={anterior:'Anterior',posterior:'Posterior',esquerdo:'Lat. Esq.',direito:'Lat. Dir.'};
+const imgs={},landmarks={},angles={},rulers={},triangles={};
+let curView=null,pendingView=null,curStep=0;
+let curTool='none',angleStep={},rulerStep={},triStep={},triSide='D';
+let lmSize=1,lmBorderColor='white';
+const LM_RADII=[2,3,5,7,10];
+
+// ─── ACHADOS AUTOMÁTICOS POR ÂNGULO ───
+const ACHADO_RULES=[
+  {test:(a,v,b)=>/(ombro|acrômio|acromio)/i.test(a)&&/(ombro|acrômio|acromio)/i.test(b),
+   dev:d=>Math.abs(180-d),label:'Ombros',
+   r:[{max:2,t:'Ombros simétricos',s:'ok'},{max:5,t:'Leve assimetria de ombros',s:'warn'},{max:99,t:'Assimetria de ombros significativa',s:'alert'}]},
+  {test:(a,v,b)=>/(eias|crista)/i.test(a)&&/(eias|crista)/i.test(b),
+   dev:d=>Math.abs(180-d),label:'Pelve',
+   r:[{max:2,t:'Pelve simétrica',s:'ok'},{max:4,t:'Leve inclinação pélvica',s:'warn'},{max:99,t:'Inclinação pélvica significativa',s:'alert'}]},
+  {test:(a,v,b)=>/joelho/i.test(v),
+   dev:d=>Math.abs(180-d),label:'Joelho',
+   r:[{max:3,t:'Alinhamento do joelho normal',s:'ok'},{max:7,t:'Leve desvio de joelho',s:'warn'},{max:99,t:'Joelho valgo/varo acentuado',s:'alert'}]},
+  {test:(a,v,b)=>/trocânter|troc/i.test(a)&&/trocânter|troc/i.test(b),
+   dev:d=>Math.abs(180-d),label:'Quadril',
+   r:[{max:2,t:'Quadril simétrico',s:'ok'},{max:5,t:'Leve assimetria de quadril',s:'warn'},{max:99,t:'Assimetria de quadril significativa',s:'alert'}]},
+  {test:(a,v,b)=>/(tragus|orelha)/i.test(a)&&/(tragus|orelha)/i.test(b)&&/(c7|cervical)/i.test(v),
+   dev:d=>Math.abs(180-d),label:'Cefálico',
+   r:[{max:3,t:'Alinhamento cefálico simétrico',s:'ok'},{max:7,t:'Leve inclinação cefálica',s:'warn'},{max:99,t:'Inclinação cefálica significativa',s:'alert'}]},
+  {test:(a,v,b)=>/(tragus|orelha)/i.test(a)&&/ombro/i.test(v)&&/(trocânter|troc|quadril)/i.test(b),
+   dev:d=>Math.abs(180-d),label:'Sagital',
+   r:[{max:5,t:'Alinhamento sagital normal',s:'ok'},{max:12,t:'Leve anteriorização de cabeça',s:'warn'},{max:99,t:'Anteriorização de cabeça acentuada',s:'alert'}]},
+];
+function getAngleFinding(n1,nv,n2,deg){
+  for(const rule of ACHADO_RULES){
+    if(!rule.test(n1,nv,n2))continue;
+    const dev=rule.dev(deg);
+    for(const r of rule.r){if(dev<=r.max)return{text:r.t,cls:r.s,label:rule.label,dev:dev.toFixed(1)};} 
+  }
+  return null;
+}
+const LM_COLORS=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8','#20c997','#f06595'];
+let lmCI=0,viewMode='single';
+const historyStack={};
+let zoom=1,panX=0,panY=0,isPanning=false,panStart={x:0,y:0};
+let dragLM={active:false,idx:-1};
+let lupaOn=false,LUPA_R=80,LUPA_ZOOM=3;
+let snapEnabled=true;
+const viewState={};
+const DEF_HLINES=[13,28,42,55,68,80];
+const DEF_HLBLS=['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos'];
+function getState(v){
+  if(!viewState[v])viewState[v]={vPos:50,vAxisOn:true,lineOp:.75,lW:1,vColor:'#ff4444',hColor:'#00e5ff',hLines:[...DEF_HLINES],hLbls:[...DEF_HLBLS],hLinesVis:[true,true,true,true,true,true],gradeOn:false,linesOn:true,gradeType:'simples',gradeSpacing:10,gradeOp:0.20,gradeLW:0.5,gradeStyle:'solid',gradeColor:'#ffffff',gradeOffX:0,gradeOffY:0,gradeW:100,gradeH:100,gradeBorderOn:false,gradeBorderLW:2,gradeBorderOp:0.8,gradeBorderStyle:'solid',gradeBorderColor:'#ffffff'};
+  return viewState[v];
+}
+function S(){return getState(curView);}
+
+function newSession(){
+  // limpa estado
+  VIEWS.forEach(v=>{delete imgs[v];landmarks[v]=[];angles[v]=[];rulers[v]=[];triangles[v]=[];historyStack[v]=[];delete viewState[v];delete calibState[v];delete annotations[v];});
+  curView=null;lmCI=0;angleStep={};rulerStep={};triStep={};currentAvalId=null;currentPacienteId=null;
+  document.getElementById('pacienteVinculado').textContent='Nenhum paciente vinculado';
+  document.getElementById('pacienteVinculado').style.color='';
+  document.getElementById('btnDesvincular').style.display='none';
+  const fields=['p_nome','p_nasc','p_idade','p_imc','p_peso','p_altura','p_prof','p_aval','p_queixa','p_hist','p_obj','pdf_clinica','pdf_endereco','pdf_achados_frontal','pdf_achados_sagital','pdf_conclusao'];
+  fields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('p_sexo').value='';
+  document.getElementById('imc_badge').style.display='none';
+  document.getElementById('hBadge').textContent='Nenhum paciente';
+  const today=new Date().toISOString().split('T')[0];
+  document.getElementById('p_data').value=today;
+  VIEWS.forEach(v=>{
+    const ph=document.getElementById('ph_'+v);
+    const slot=document.getElementById('slot_'+v);
+    if(ph&&(ph.tagName==='IMG'||ph.classList.contains('photo-thumb-wrap'))){ph.outerHTML=`<div class="photo-ph" id="ph_${v}"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".35"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>`;}
+    if(slot){slot.classList.remove('loaded');slot.onclick=()=>triggerUp(v);}
+  });
+  setSaveStatus('');
+  closeSavedModal();
+  goStep(0);
+}
+
+// ─── SAVE / LOAD ───
+function scheduleSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>saveSession(false),3000);
+  setSaveStatus('⬤ Alterações não salvas');
+}
+
+function setSaveStatus(msg){
+  const el=document.getElementById('saveStatus');
+  if(el)el.textContent=msg;
+}
+
+async function saveSession(manual){
+  if(!currentUser)return;
+  const nome=document.getElementById('p_nome').value.trim();
+  setSaveStatus('Salvando...');
+
+  // serializa fotos como base64 (reduzidas para economizar espaço)
+  const fotoData={};
+  for(const v of VIEWS){
+    if(imgs[v]){
+      const c=document.createElement('canvas');
+      const maxW=1200;
+      const scale=Math.min(1,maxW/imgs[v].width);
+      c.width=Math.round(imgs[v].width*scale);
+      c.height=Math.round(imgs[v].height*scale);
+      c.getContext('2d').drawImage(imgs[v],0,0,c.width,c.height);
+      fotoData[v]=c.toDataURL('image/jpeg',0.82);
+    }
+  }
+
+  const payload={
+    user_id:currentUser.id,
+    paciente_nome:nome||null,
+    paciente_nasc:document.getElementById('p_nasc').value||null,
+    paciente_sexo:document.getElementById('p_sexo').value||null,
+    paciente_peso:parseFloat(document.getElementById('p_peso').value)||null,
+    paciente_altura:parseFloat(document.getElementById('p_altura').value)||null,
+    paciente_prof:document.getElementById('p_prof').value||null,
+    paciente_queixa:document.getElementById('p_queixa').value||null,
+    paciente_hist:document.getElementById('p_hist').value||null,
+    paciente_obj:document.getElementById('p_obj').value||null,
+    data_avaliacao:document.getElementById('p_data').value||null,
+    avaliador:document.getElementById('p_aval').value||null,
+    foto_anterior:fotoData.anterior||null,
+    foto_posterior:fotoData.posterior||null,
+    foto_esquerdo:fotoData.esquerdo||null,
+    foto_direito:fotoData.direito||null,
+    view_state:viewState,
+    landmarks,angles,rulers,triangles,
+    pdf_clinica:document.getElementById('pdf_clinica').value||null,
+    pdf_endereco:document.getElementById('pdf_endereco').value||null,
+    pdf_achados_frontal:document.getElementById('pdf_achados_frontal').value||null,
+    pdf_achados_sagital:document.getElementById('pdf_achados_sagital').value||null,
+    pdf_conclusao:document.getElementById('pdf_conclusao').value||null,
+    status:'em_andamento',
+    paciente_id:currentPacienteId||null,
+    calibracao:calibState||{},
+    anotacoes:annotations||{}
+  };
+
+  let error;
+  if(currentAvalId){
+    ({error}=await sb.from('avaliacoes').update(payload).eq('id',currentAvalId));
+  } else {
+    const {data,error:e}=await sb.from('avaliacoes').insert(payload).select('id').single();
+    error=e;
+    if(data)currentAvalId=data.id;
+  }
+
+  if(error){setSaveStatus('Erro ao salvar');if(manual)showToast('Erro ao salvar: '+error.message);return;}
+  setSaveStatus('✓ Salvo às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  if(manual)showToast('Avaliação salva com sucesso!');
+}
+
+async function markFinalizada(){
+  if(!currentAvalId){await saveSession(false);}
+  if(!currentAvalId)return;
+  const {error}=await sb.from('avaliacoes').update({status:'finalizada'}).eq('id',currentAvalId);
+  if(!error){showToast('Avaliação marcada como finalizada!');setSaveStatus('✓ Finalizada');}
+}
+
+async function loadAvalById(id){
+  const {data,error}=await sb.from('avaliacoes').select('*').eq('id',id).maybeSingle();
+  if(error||!data){showToast('Erro ao carregar avaliação.');return;}
+  newSession();
+  currentAvalId=data.id;
+
+  // restaura campos
+  const set=(el,v)=>{if(document.getElementById(el)&&v!=null)document.getElementById(el).value=v;};
+  set('p_nome',data.paciente_nome);set('p_nasc',data.paciente_nasc);
+  set('p_sexo',data.paciente_sexo);set('p_peso',data.paciente_peso);
+  set('p_altura',data.paciente_altura);set('p_prof',data.paciente_prof);
+  set('p_queixa',data.paciente_queixa);set('p_hist',data.paciente_hist);
+  set('p_obj',data.paciente_obj);set('p_data',data.data_avaliacao);
+  set('p_aval',data.avaliador);
+  set('pdf_clinica',data.pdf_clinica);set('pdf_endereco',data.pdf_endereco);
+  set('pdf_achados_frontal',data.pdf_achados_frontal);
+  set('pdf_achados_sagital',data.pdf_achados_sagital);
+  set('pdf_conclusao',data.pdf_conclusao);
+  calcAge();calcIMC();updateBadge();
+
+  // restaura paciente vinculado
+  if(data.paciente_id){
+    currentPacienteId=data.paciente_id;
+    const {data:pac}=await sb.from('pacientes').select('nome').eq('id',data.paciente_id).maybeSingle();
+    if(pac){
+      document.getElementById('pacienteVinculado').textContent='✓ '+pac.nome;
+      document.getElementById('pacienteVinculado').style.color='var(--success-text)';
+      document.getElementById('btnDesvincular').style.display='inline-flex';
+    }
+  }
+
+  // restaura calibração e anotações
+  if(data.calibracao)Object.assign(calibState,data.calibracao);
+  if(data.anotacoes)Object.assign(annotations,data.anotacoes);
+
+  // restaura viewState e marcações
+  if(data.view_state)Object.assign(viewState,data.view_state);
+  if(data.landmarks)Object.assign(landmarks,data.landmarks);
+  if(data.angles)Object.assign(angles,data.angles);
+  if(data.rulers)Object.assign(rulers,data.rulers);
+  if(data.triangles)Object.assign(triangles,data.triangles);
+
+  // restaura fotos
+  const loadFoto=(v,src)=>new Promise(resolve=>{
+    if(!src){resolve();return;}
+    const img=new Image();
+    img.onload=()=>{imgs[v]=img;updateSlot(v);resolve();};
+    img.src=src;
+  });
+  await Promise.all(VIEWS.map(v=>loadFoto(v,data['foto_'+v])));
+
+  setSaveStatus('✓ Avaliação carregada');
+  closeSavedModal();
+  goStep(0);
+  showToast('Avaliação de '+( data.paciente_nome||'paciente')+' carregada!');
+}
+
+// ─── MODAL AVALIAÇÕES ───
+async function openSavedModal(){
+  document.getElementById('savedModal').classList.add('open');
+  const list=document.getElementById('savedList');
+  list.innerHTML='<p style="font-size:12px;color:var(--text-hint)">Carregando...</p>';
+  const {data,error}=await sb.from('avaliacoes')
+    .select('id,paciente_nome,data_avaliacao,status,updated_at')
+    .eq('user_id',currentUser.id)
+    .order('updated_at',{ascending:false});
+  if(error||!data.length){
+    list.innerHTML='<p style="font-size:12px;color:var(--text-hint)">Nenhuma avaliação salva ainda.</p>';return;
+  }
+  list.innerHTML='';
+  data.forEach(a=>{
+    const card=document.createElement('div');card.className='aval-card';
+    const dt=a.data_avaliacao?new Date(a.data_avaliacao+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+    const upd=new Date(a.updated_at).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+    card.innerHTML=`<div class="aval-info">
+      <div class="aval-nome">${a.paciente_nome||'(sem nome)'}</div>
+      <div class="aval-meta">Avaliação: ${dt} &nbsp;·&nbsp; Salvo: ${upd}</div>
+    </div>
+    <span class="aval-status ${a.status}">${a.status==='finalizada'?'Finalizada':'Em andamento'}</span>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-secondary btn-sm" onclick="loadAvalById('${a.id}')">Abrir</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteAval('${a.id}',this)">Excluir</button>
+    </div>`;
+    list.appendChild(card);
+  });
+}
+function closeSavedModal(){document.getElementById('savedModal').classList.remove('open');}
+
+async function deleteAval(id,btn){
+  if(!confirm('Excluir esta avaliação permanentemente?'))return;
+  btn.disabled=true;btn.textContent='...';
+  const {error}=await sb.from('avaliacoes').delete().eq('id',id);
+  if(error){showToast('Erro ao excluir.');btn.disabled=false;btn.textContent='Excluir';return;}
+  if(id===currentAvalId)currentAvalId=null;
+  btn.closest('.aval-card').remove();
+  showToast('Avaliação excluída.');
+}
+
+// ─── MODAL ADMIN ───
+async function openAdminModal(){
+  document.getElementById('adminModal').classList.add('open');
+  const list=document.getElementById('adminList');
+  list.innerHTML='<p style="font-size:12px;color:var(--text-hint)">Carregando...</p>';
+  const {data,error}=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  if(error){list.innerHTML='<p style="color:var(--danger-text)">Erro ao carregar usuários.</p>';return;}
+  list.innerHTML='';
+  data.forEach(u=>{
+    const card=document.createElement('div');card.className='admin-card';
+    const dt=new Date(u.created_at).toLocaleDateString('pt-BR');
+    card.innerHTML=`<div style="flex:1">
+      <div style="font-size:13px;font-weight:600">${u.nome||u.email}</div>
+      <div style="font-size:11px;color:var(--text-muted)">${u.email} &nbsp;·&nbsp; Cadastro: ${dt}</div>
+      ${u.clinica?`<div style="font-size:11px;color:var(--text-muted)">${u.clinica}</div>`:''}
+    </div>
+    <span class="admin-role ${u.role}">${{pending:'Aguardando',approved:'Aprovado',revoked:'Revogado'}[u.role]||u.role}</span>
+    <div style="display:flex;gap:6px">
+      ${u.role!=='approved'?`<button class="btn btn-primary btn-sm" onclick="adminAction('${u.id}','approve',this)">Aprovar</button>`:''}
+      ${u.role==='approved'?`<button class="btn btn-danger btn-sm" onclick="adminAction('${u.id}','revoke',this)">Revogar</button>`:''}
+    </div>`;
+    list.appendChild(card);
+  });
+}
+function closeAdminModal(){document.getElementById('adminModal').classList.remove('open');}
+
+async function adminAction(uid,action,btn){
+  btn.disabled=true;btn.textContent='...';
+  const role=action==='approve'?'approved':'revoked';
+  const extra=action==='approve'?{approved_at:new Date().toISOString()}:{};
+  const {error}=await sb.from('profiles').update({role,...extra}).eq('id',uid);
+  if(error){showToast('Erro: '+error.message);btn.disabled=false;return;}
+  showToast(action==='approve'?'Usuário aprovado!':'Acesso revogado.');
+  openAdminModal();
+}
+
+// ─── STEP NAV ───
+function goStep(n){
+  for(let i=0;i<6;i++){
+    const s=document.getElementById('step'+i);if(s)s.style.display=i===n?'block':'none';
+    const b=document.getElementById('sn'+i);if(b)b.classList.toggle('active',i===n);
+  }
+  curStep=n;
+  if(n===2){renderSgTabs();loadControls();refreshModelSelect();resetZoom();draw();}
+  if(n===3)buildExports();
+  if(n===4){initSigCanvas();buildPdfPreview();}
+  if(n===5){loadCmpAvals();}
+}
+
+// ─── PATIENT ───
+function updateBadge(){const n=document.getElementById('p_nome').value.trim();document.getElementById('hBadge').textContent=n||'Nenhum paciente';}
+function calcAge(){
+  const v=document.getElementById('p_nasc').value;if(!v)return;
+  const dob=new Date(v),now=new Date();
+  let age=now.getFullYear()-dob.getFullYear();
+  if(now<new Date(now.getFullYear(),dob.getMonth(),dob.getDate()))age--;
+  document.getElementById('p_idade').value=age+' anos';
+}
+function calcIMC(){
+  const p=parseFloat(document.getElementById('p_peso').value);
+  const a=parseFloat(document.getElementById('p_altura').value)/100;
+  const b=document.getElementById('imc_badge');
+  if(!p||!a){document.getElementById('p_imc').value='';b.style.display='none';return;}
+  const imc=p/(a*a);document.getElementById('p_imc').value=imc.toFixed(1);
+  let lbl,bg,col;
+  if(imc<18.5){lbl='Abaixo do peso';bg='#e8f4fd';col='#0c5a8a';}
+  else if(imc<25){lbl='Peso normal';bg='#eaf7ee';col='#1a6b35';}
+  else if(imc<30){lbl='Sobrepeso';bg='#fff8e1';col='#7a5c00';}
+  else{lbl='Obesidade';bg='#fdeaea';col='#8a1c1c';}
+  b.textContent=lbl;b.style.background=bg;b.style.color=col;b.style.display='inline-block';
+}
+
+// ─── FOTOS ───
+function triggerUp(v){pendingView=v;document.getElementById('fileInput').click();}
+function handleUp(e){
+  const file=e.target.files[0];if(!file||!pendingView)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      // se paisagem, rotaciona 90° para retrato automaticamente
+      if(img.width>img.height){
+        const rot=document.createElement('canvas');
+        rot.width=img.height;rot.height=img.width;
+        const rctx=rot.getContext('2d');
+        rctx.translate(rot.width/2,rot.height/2);
+        rctx.rotate(Math.PI/2);
+        rctx.drawImage(img,-img.width/2,-img.height/2);
+        const rotated=new Image();
+        rotated.onload=()=>finishUpload(rotated);
+        rotated.src=rot.toDataURL('image/jpeg',0.95);
+        return;
+      }
+      finishUpload(img);
+    };
+    function finishUpload(finalImg){
+      imgs[pendingView]=finalImg;
+      if(!landmarks[pendingView])landmarks[pendingView]=[];
+      if(!angles[pendingView])angles[pendingView]=[];
+      if(!rulers[pendingView])rulers[pendingView]=[];
+      if(!triangles[pendingView])triangles[pendingView]=[];
+      if(!historyStack[pendingView])historyStack[pendingView]=[];
+      getState(pendingView);
+      updateSlot(pendingView);
+      if(!curView)curView=pendingView;
+      renderSgTabs();if(curStep===2){loadControls();resetZoom();draw();renderVistaMiniBar();}
+      scheduleSave();
+    }
+    img.src=ev.target.result;
+  };
+  r.readAsDataURL(file);e.target.value='';
+}
+function updateSlot(v){
+  const ph=document.getElementById('ph_'+v);
+  const slot=document.getElementById('slot_'+v);if(!ph||!slot)return;
+  const img2=imgs[v];
+  // thumbnail retrato 3:4, crop central
+  const TW=90,TH=120;
+  const sc=Math.max(TW/img2.width,TH/img2.height);
+  const sw=Math.round(TW/sc),sh=Math.round(TH/sc);
+  const sx=Math.round((img2.width-sw)/2),sy=Math.round((img2.height-sh)/2);
+  const off=document.createElement('canvas');off.width=TW;off.height=TH;
+  off.getContext('2d').drawImage(img2,sx,sy,sw,sh,0,0,TW,TH);
+  ph.outerHTML=`<div class="photo-thumb-wrap" id="ph_${v}"><img src="${off.toDataURL()}" alt="${VL[v]}"></div>`;
+  slot.classList.add('loaded');
+  slot.onclick=()=>{curView=v;renderSgTabs();loadControls();resetZoom();draw();};
+}
+function renderSgTabs(){
+  const c=document.getElementById('sgTabs');if(!c){renderVistaMiniBar();return;}c.innerHTML='';
+  VIEWS.forEach(v=>{
+    if(!imgs[v])return;
+    const s=document.createElement('div');s.className='photo-slot loaded'+(v===curView?' cur':'');
+    const img2=imgs[v];
+    // canvas retrato 3:4
+    const TW=90,TH=120;
+    const sc2=Math.max(TW/img2.width,TH/img2.height);
+    const sw=Math.round(TW/sc2),sh=Math.round(TH/sc2);
+    const sx=Math.round((img2.width-sw)/2),sy=Math.round((img2.height-sh)/2);
+    const off=document.createElement('canvas');off.width=TW;off.height=TH;
+    off.getContext('2d').drawImage(img2,sx,sy,sw,sh,0,0,TW,TH);
+    s.innerHTML=`<div class="photo-thumb-wrap"><img src="${off.toDataURL()}" alt="${VL[v]}"></div><div class="slot-lbl">${VL[v]}</div>`;
+    s.onclick=()=>{curView=v;renderSgTabs();loadControls();resetZoom();draw();};
+    c.appendChild(s);
+  });
+}
+
+// ─── HISTORY ───
+function pushHistory(v,actionType=''){
+  if(!historyStack[v])historyStack[v]=[];
+  const s=getState(v);
+  historyStack[v].push(JSON.parse(JSON.stringify({
+    landmarks:landmarks[v]||[],angles:angles[v]||[],rulers:rulers[v]||[],triangles:triangles[v]||[],
+    hLines:s.hLines,vPos:s.vPos,actionType
+  })));
+  if(historyStack[v].length>30)historyStack[v].shift();
+}
+function undo(){
+  if(!curView||!historyStack[curView]?.length){showToast('Nada para desfazer');return;}
+  const snap=historyStack[curView].pop();
+  landmarks[curView]=snap.landmarks;angles[curView]=snap.angles;
+  rulers[curView]=snap.rulers;triangles[curView]=snap.triangles;
+  getState(curView).hLines=snap.hLines;getState(curView).vPos=snap.vPos;
+  loadControls();draw();renderLMList();renderAngles();renderRulers();renderTriList();
+  const labels={lm:'↩ Ponto removido',angle:'↩ Ângulo removido',ruler:'↩ Régua removida',
+    tri:'↩ Triângulo removido',hl:'↩ Linha removida',annot:'↩ Anotação removida'};
+  showToast(labels[snap.actionType]||'↩ Ação desfeita');
+}
+
+// ─── ZOOM/PAN ───
+function resetZoom(){zoom=1;panX=0;panY=0;applyTransform();}
+function applyTransform(){
+  const c=document.getElementById('mainCanvas');
+  if(c){c.style.transform=`translate(${panX}px,${panY}px) scale(${zoom})`;c.style.transformOrigin='top left';}
+  const zi=document.getElementById('zoomInfo');if(zi)zi.textContent=Math.round(zoom*100)+'%';
+}
+function onWheel(e){e.preventDefault();const d=e.deltaY>0?-0.1:0.1;zoom=Math.min(Math.max(zoom+d,0.3),5);applyTransform();}
+function onMouseDown(e){if(e.altKey){isPanning=true;panStart={x:e.clientX-panX,y:e.clientY-panY};e.preventDefault();}}
+function onMouseMove(e){
+  if(isPanning){panX=e.clientX-panStart.x;panY=e.clientY-panStart.y;applyTransform();}
+  if(lupaOn&&curView&&imgs[curView]){
+    const canvas=document.getElementById('mainCanvas');if(!canvas)return;
+    const rect=canvas.getBoundingClientRect();
+    const cx=(e.clientX-rect.left)/zoom,cy=(e.clientY-rect.top)/zoom;
+    const wrap=document.getElementById('singleWrap');
+    const wr=wrap?wrap.getBoundingClientRect():{left:rect.left,top:rect.top};
+    drawMagnifier(e.clientX-wr.left,e.clientY-wr.top,cx,cy,canvas);
+  }
+}
+function onMouseLeave(e){
+  hideMagnifier();
+  if(dragLM.active)onMouseUp(e);
+  isPanning=false;
+}
+function onMouseUp(){isPanning=false;}
+
+// ─── CONTROLES ───
+function loadControls(){
+  if(!curView)return;const s=S();
+  const set=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  set('vPos',s.vPos);set('vPosN',parseFloat(s.vPos).toFixed(1));
+  set('lOp',Math.round(s.lineOp*100));set('lOpN',Math.round(s.lineOp*100));
+  set('lW',s.lW);set('lWN',s.lW);
+  ['vc_r','vc_w','vc_c','vc_y'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const vcMap={'#ff4444':'vc_r','#ffffff':'vc_w','#00e5ff':'vc_c','#ffff00':'vc_y','#ff922b':'vc_o','#cc5de8':'vc_p','#74c0fc':'vc_b','#adb5bd':'vc_gr'};
+  const vi=vcMap[s.vColor];if(vi){const el=document.getElementById(vi);if(el)el.classList.add('on');}
+  ['hc_c','hc_r','hc_g','hc_w','hc_y','hc_o','hc_p','hc_b','hc_gr'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const hcMap={'#00e5ff':'hc_c','#ff4444':'hc_r','#00ff88':'hc_g','#ffffff':'hc_w','#ffff00':'hc_y','#ff922b':'hc_o','#cc5de8':'hc_p','#74c0fc':'hc_b','#adb5bd':'hc_gr'};
+  const hi=hcMap[s.hColor];if(hi){const el=document.getElementById(hi);if(el)el.classList.add('on');}
+  renderHLinesCtrl();
+  // grade
+  const gs=S();
+  const gOn=document.getElementById('gradeOn');if(gOn){gOn.checked=gs.gradeOn;document.getElementById('gradeControls').style.display=gs.gradeOn?'block':'none';}
+  const lOn=document.getElementById('linesOn');if(lOn)lOn.checked=gs.linesOn!==false;
+  const vAx=document.getElementById('vAxisOn');if(vAx){vAx.checked=gs.vAxisOn!==false;const vc=document.getElementById('vAxisControls');if(vc)vc.style.opacity=gs.vAxisOn!==false?'1':'0.4';}
+  const setSafe=(id,v)=>{const el=document.getElementById(id);if(el)el.value=v;};
+  setSafe('gradeSpacing',gs.gradeSpacing);setSafe('gradeSpacingN',gs.gradeSpacing);
+  setSafe('gradeOp',Math.round(gs.gradeOp*100));setSafe('gradeOpN',Math.round(gs.gradeOp*100));
+  setSafe('gradeLW',gs.gradeLW);setSafe('gradeLWN',gs.gradeLW);
+  setSafe('gradeStyle',gs.gradeStyle);
+  setSafe('gradeOffX',gs.gradeOffX||0);setSafe('gradeOffXN',gs.gradeOffX||0);
+  setSafe('gradeOffY',gs.gradeOffY||0);setSafe('gradeOffYN',gs.gradeOffY||0);
+  setSafe('gradeW',gs.gradeW||100);setSafe('gradeWN',gs.gradeW||100);
+  setSafe('gradeH',gs.gradeH||100);setSafe('gradeHN',gs.gradeH||100);
+  ['grade_simples','grade_central'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('on',id==='grade_'+gs.gradeType);});
+  const gbOn=document.getElementById('gradeBorderOn');if(gbOn){gbOn.checked=gs.gradeBorderOn||false;document.getElementById('gradeBorderControls').style.display=(gs.gradeBorderOn)?'block':'none';}
+  setSafe('gradeBorderLW',gs.gradeBorderLW||2);setSafe('gradeBorderLWN',gs.gradeBorderLW||2);
+  setSafe('gradeBorderOp',Math.round((gs.gradeBorderOp||0.8)*100));setSafe('gradeBorderOpN',Math.round((gs.gradeBorderOp||0.8)*100));
+  setSafe('gradeBorderStyle',gs.gradeBorderStyle||'solid');
+  const gbcAll=['gbc_w','gbc_c','gbc_y','gbc_g','gbc_r','gbc_o','gbc_p','gbc_b','gbc_gr'];
+  gbcAll.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const gbcMap={'#ffffff':'gbc_w','#00e5ff':'gbc_c','#ffff00':'gbc_y','#00ff88':'gbc_g','#ff4444':'gbc_r','#ff922b':'gbc_o','#cc5de8':'gbc_p','#74c0fc':'gbc_b','#adb5bd':'gbc_gr'};
+  const gbcId=gbcMap[gs.gradeBorderColor||'#ffffff'];if(gbcId){const el=document.getElementById(gbcId);if(el)el.classList.add('on');}
+  const gcAll=['gc_w','gc_c','gc_y','gc_g','gc_r','gc_o','gc_p','gc_b','gc_gr'];
+  gcAll.forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
+  const gcMap={'#ffffff':'gc_w','#00e5ff':'gc_c','#ffff00':'gc_y','#00ff88':'gc_g','#ff4444':'gc_r','#ff922b':'gc_o','#cc5de8':'gc_p','#74c0fc':'gc_b','#adb5bd':'gc_gr'};
+  const gcId=gcMap[gs.gradeColor];if(gcId){const el=document.getElementById(gcId);if(el)el.classList.add('on');}
+}
+function syncV(val,o){if(!curView)return;S().vPos=parseFloat(val)||0;const el=document.getElementById(o);if(el)el.value=parseFloat(val).toFixed(1);scheduleSave();draw();}
+function syncOp(val,o){if(!curView)return;S().lineOp=(parseFloat(val)||75)/100;const el=document.getElementById(o);if(el)el.value=Math.round(parseFloat(val));draw();}
+function syncLW(val,o){if(!curView)return;S().lW=parseFloat(val)||1;const el=document.getElementById(o);if(el)el.value=parseFloat(val);draw();}
+function setVC(c,id){if(!curView)return;S().vColor=c;['vc_r','vc_w','vc_c','vc_y','vc_o','vc_p','vc_b','vc_gr'].forEach(i=>{const el=document.getElementById(i);if(el)el.classList.toggle('on',i===id);});draw();}
+function setHC(c,id){if(!curView)return;S().hColor=c;['hc_c','hc_r','hc_g','hc_w','hc_y','hc_o','hc_p','hc_b','hc_gr'].forEach(i=>{const el=document.getElementById(i);if(el)el.classList.toggle('on',i===id);});draw();}
+
+// ─── HORIZONTAIS ───
+function renderHLinesCtrl(){
+  const c=document.getElementById('hLinesCtrl');if(!c||!curView)return;c.innerHTML='';
+  const s=S();
+  if(!s.hLinesVis)s.hLinesVis=s.hLines.map(()=>true);
+  while(s.hLinesVis.length<s.hLines.length)s.hLinesVis.push(true);
+  s.hLines.forEach((pos,i)=>{
+    const vis=s.hLinesVis[i]!==false;
+    const row=document.createElement('div');row.className='hl-item';
+    row.style.opacity=vis?'1':'0.45';
+    row.innerHTML=`
+    <label class="toggle" title="${vis?'Ocultar':'Mostrar'} linha" style="margin-right:2px">
+      <input type="checkbox" ${vis?'checked':''} onchange="toggleHL(${i},this.checked)">
+      <span class="toggle-slider"></span>
+    </label>
+    <span class="hl-name" style="cursor:text;${!vis?'text-decoration:line-through':''}" title="Duplo clique para renomear" ondblclick="renameHL(${i})">${s.hLbls[i]||'Linha '+(i+1)}</span>
+    <input type="range" min="0" max="100" value="${pos}" step="0.1" oninput="moveHL(${i},this.value,true)" ${!vis?'disabled':''} style="${!vis?'opacity:.4':''}">
+    <input type="number" class="hl-num" value="${pos}" min="0" max="100" step="0.1" oninput="moveHL(${i},this.value,false)" id="hln_${i}" ${!vis?'disabled':''} style="${!vis?'opacity:.4':''}">
+    <button class="hl-del" onclick="removeHL(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+function addHL(){if(!curView)return;pushHistory(curView,'hl');S().hLines.push(50);S().hLbls.push('Linha '+(S().hLines.length));if(!S().hLinesVis)S().hLinesVis=S().hLines.map(()=>true);else S().hLinesVis.push(true);renderHLinesCtrl();scheduleSave();draw();}
+function moveHL(i,v,fromSlider){
+  if(!curView)return;S().hLines[i]=parseFloat(v)||0;
+  if(fromSlider){const el=document.getElementById('hln_'+i);if(el)el.value=parseFloat(v).toFixed(1);}
+  else{const row=document.getElementById('hLinesCtrl').children[i];if(row){const sl=row.querySelector('input[type=range]');if(sl)sl.value=v;}}
+  scheduleSave();draw();
+}
+function removeHL(i){if(!curView)return;pushHistory(curView,'hl');S().hLines.splice(i,1);S().hLbls.splice(i,1);if(S().hLinesVis)S().hLinesVis.splice(i,1);renderHLinesCtrl();scheduleSave();draw();}
+function toggleHL(i,vis){
+  if(!curView)return;
+  const s=S();
+  if(!s.hLinesVis)s.hLinesVis=s.hLines.map(()=>true);
+  s.hLinesVis[i]=vis;
+  renderHLinesCtrl();scheduleSave();draw();
+}
+function renameHL(i){
+  if(!curView)return;
+  const s=S();
+  const cur=s.hLbls[i]||'Linha '+(i+1);
+  const nv=prompt('Renomear linha:',cur);
+  if(nv!==null){
+    s.hLbls[i]=nv.trim()||'Linha '+(i+1);
+    renderHLinesCtrl();scheduleSave();
+  }
+}
+
+// ─── MODELOS ───
+function getModels(){try{return JSON.parse(localStorage.getItem('postural_models')||'{}')}catch{return{}}}
+function saveModels(m){localStorage.setItem('postural_models',JSON.stringify(m))}
+function refreshModelSelect(){
+  const sel=document.getElementById('modelSelect');if(!sel)return;
+  const models=getModels(),cur=sel.value;
+  sel.innerHTML='<option value="">Selecionar modelo...</option>';
+  Object.keys(models).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=k;sel.appendChild(o);});
+  sel.value=cur;
+}
+function saveModel(){
+  if(!curView)return;const name=prompt('Nome do modelo:','Padrão clínico');if(!name)return;
+  const s=S(),models=getModels();
+  models[name]={vPos:s.vPos,hLines:[...s.hLines],hLbls:[...s.hLbls],vColor:s.vColor,hColor:s.hColor,lW:s.lW,lineOp:s.lineOp};
+  saveModels(models);refreshModelSelect();document.getElementById('modelSelect').value=name;showToast('Modelo salvo!');
+}
+function loadModel(){
+  const name=document.getElementById('modelSelect').value;if(!name||!curView)return;
+  const m=getModels()[name];if(!m)return;
+  pushHistory(curView);const s=S();
+  Object.assign(s,{vPos:m.vPos,hLines:[...m.hLines],hLbls:[...m.hLbls],hLinesVis:m.hLines.map(()=>true),vColor:m.vColor,hColor:m.hColor,lW:m.lW,lineOp:m.lineOp});
+  loadControls();scheduleSave();draw();showToast('Modelo carregado!');
+}
+function deleteModel(){
+  const name=document.getElementById('modelSelect').value;if(!name||!confirm(`Excluir modelo "${name}"?`))return;
+  const models=getModels();delete models[name];saveModels(models);refreshModelSelect();
+}
+
+// ─── MODO COMPARAÇÃO ───
+function setMode(m){
+  viewMode=m;
+  document.getElementById('mode_single').classList.toggle('on',m==='single');
+  document.getElementById('mode_compare').classList.toggle('on',m==='compare');
+  document.getElementById('singleWrap').style.display=m==='single'?'flex':'none';
+  document.getElementById('compareWrap').style.display=m==='compare'?'grid':'none';
+  const selectors=document.getElementById('compareSelectors');
+  if(selectors)selectors.style.display=m==='compare'?'flex':'none';
+  if(m==='compare'){populateCmpSelectors();renderCompare();}else draw();
+}
+function populateCmpSelectors(){
+  const loaded=VIEWS.filter(v=>imgs[v]);
+  const sel1=document.getElementById('cmpSel1');
+  const sel2=document.getElementById('cmpSel2');
+  if(!sel1||!sel2)return;
+  // rebuild options showing only loaded views
+  [sel1,sel2].forEach((sel,si)=>{
+    const prev=sel.value;
+    sel.innerHTML='';
+    VIEWS.forEach(v=>{
+      if(!imgs[v])return;
+      const o=document.createElement('option');
+      o.value=v;o.textContent=VL[v];
+      sel.appendChild(o);
+    });
+    // restore or set default
+    if(loaded.includes(prev))sel.value=prev;
+    else if(si===0&&loaded[0])sel.value=loaded[0];
+    else if(si===1&&loaded[1])sel.value=loaded[1];
+  });
+  // ensure the two selectors are different if possible
+  if(sel1.value===sel2.value&&loaded.length>=2){
+    const other=loaded.find(v=>v!==sel1.value);
+    if(other)sel2.value=other;
+  }
+}
+function renderCompare(){
+  const wrap=document.getElementById('compareWrap');wrap.innerHTML='';
+  const loaded=VIEWS.filter(v=>imgs[v]);
+  if(loaded.length<2){wrap.innerHTML='<p style="color:#aaa;padding:1rem;font-size:12px">Carregue ao menos 2 fotos para comparar.</p>';return;}
+  // get selected views from dropdowns
+  const sel1=document.getElementById('cmpSel1');
+  const sel2=document.getElementById('cmpSel2');
+  const v1=(sel1&&imgs[sel1.value])?sel1.value:(loaded[0]);
+  const v2=(sel2&&imgs[sel2.value])?sel2.value:(loaded[1]||loaded[0]);
+  [v1,v2].forEach(v=>{
+    const side=document.createElement('div');side.className='compare-side';
+    const lbl=document.createElement('div');lbl.className='compare-lbl';lbl.textContent=VL[v];
+    const cvs=document.createElement('canvas');
+    const img=imgs[v],maxW=(wrap.clientWidth/2-4)||300,scale=Math.min(1,maxW/img.width);
+    cvs.width=Math.round(img.width*scale);cvs.height=Math.round(img.height*scale);cvs.style.width='100%';cvs.style.display='block';
+    drawOnCanvas(cvs,v,getState(v).lW);
+    side.appendChild(lbl);side.appendChild(cvs);wrap.appendChild(side);
+  });
+}
+
+// ─── FERRAMENTAS ───
+function setTool(t){
+  curTool=t;angleStep={};rulerStep={};triStep={};
+  if(t!=='none'&&activePanelTab==='linhas')switchPanelTab('ferramentas');
+  ['tl_none','tl_lm','tl_angle','tl_ruler','tl_tri','tl_annot'].forEach(id=>{const el=document.getElementById(id);if(el){el.classList.toggle('on',id==='tl_'+t);el.classList.toggle('on',id==='tl_'+t);}});
+  const c=document.getElementById('mainCanvas');if(c)c.style.cursor=t==='none'?'default':'crosshair';
+  const hints={
+    none:'Navegação — Alt+arrastar para mover, scroll para zoom',
+    lm:'Clique na foto para marcar o ponto anatômico nomeado abaixo',
+    angle:'Clique em 3 pontos marcados: 1º braço → vértice → 2º braço',
+    ruler:'Clique em 2 pontos para medir a distância (% da altura da foto)',
+    tri:'Selecione Lado D ou E e clique em 3 pontos para marcar o triângulo',
+    annot:'Clique na foto para adicionar uma anotação de texto',
+    calib:'Clique em 2 pontos para definir a referência de calibração'
+  };
+  const h=document.getElementById('toolHint');if(h)h.textContent=hints[t]||'';
+}
+function setLMN(n){const el=document.getElementById('lmName');if(el)el.value=n;}
+function setLMSize(n){
+  lmSize=n;
+  [1,2,3,4,5].forEach(i=>{const el=document.getElementById('lmsz_'+i);if(el)el.classList.toggle('on',i===n);});
+  draw();
+}
+function setLMBorder(color){
+  lmBorderColor=color;
+  const wb=document.getElementById('lmbc_white'),bb=document.getElementById('lmbc_black');
+  if(wb)wb.style.borderColor=color==='white'?'var(--accent)':'var(--border)';
+  if(bb)bb.style.borderColor=color==='black'?'var(--accent)':'var(--border)';
+  draw();
+}
+function setTriSide(side){
+  triSide=side;
+  const btnD=document.getElementById('tri_side_d'),btnE=document.getElementById('tri_side_e');
+  if(side==='D'){btnD.style.cssText='flex:1;background:#dbeafe;color:#1e40af;border-color:#93c5fd';btnE.style.cssText='flex:1';}
+  else{btnE.style.cssText='flex:1;background:#ffedd5;color:#c2410c;border-color:#fdba74';btnD.style.cssText='flex:1';}
+}
+
+// ─── CANVAS CLICK ───
+function canvasClick(e){
+  if(!curView||!imgs[curView]||e.altKey||isPanning)return;
+  const canvas=document.getElementById('mainCanvas');
+  const rect=canvas.getBoundingClientRect();
+  const cx=(e.clientX-rect.left)/zoom,cy=(e.clientY-rect.top)/zoom;
+  const px=cx/canvas.width,py=cy/canvas.height;
+
+  if(curTool==='lm'){
+    pushHistory(curView,'lm');
+    landmarks[curView].push({name:document.getElementById('lmName').value.trim()||'Ponto',px,py,color:LM_COLORS[lmCI%LM_COLORS.length]});
+    lmCI++;renderLMList();scheduleSave();draw();
+  } else if(curTool==='angle'){
+    const lms=landmarks[curView];if(!lms.length)return;
+    let closest=-1,minD=Infinity;
+    lms.forEach((lm,i)=>{const d=Math.sqrt((lm.px*canvas.width-cx)**2+(lm.py*canvas.height-cy)**2);if(d<minD){minD=d;closest=i;}});
+    if(minD>40)return;
+    const h=document.getElementById('toolHint');
+    if(angleStep.a===undefined){angleStep.a=closest;if(h)h.textContent=`P1: ${lms[closest].name} — clique no vértice`;}
+    else if(angleStep.v===undefined&&closest!==angleStep.a){angleStep.v=closest;if(h)h.textContent=`Vértice: ${lms[closest].name} — clique no 3º ponto`;}
+    else if(angleStep.b===undefined&&closest!==angleStep.a&&closest!==angleStep.v){
+      angleStep.b=closest;pushHistory(curView,'angle');
+      const deg=calcAngle(lms[angleStep.a],lms[angleStep.v],lms[angleStep.b],canvas.width,canvas.height);
+      angles[curView].push({a:angleStep.a,v:angleStep.v,b:angleStep.b,deg});
+      angleStep={};renderAngles();scheduleSave();draw();
+    }
+    draw();
+  } else if(curTool==='ruler'){
+    const h=document.getElementById('toolHint');
+    if(!rulerStep.p1){rulerStep.p1={px,py};if(h)h.textContent='P1 marcado — clique no 2º ponto';draw();}
+    else{
+      pushHistory(curView,'ruler');
+      const p1=rulerStep.p1,p2={px,py};
+      const dy=Math.abs(p2.py-p1.py)*100,dx=Math.abs(p2.px-p1.px)*100;
+      rulers[curView].push({p1,p2,dist:Math.sqrt(dx*dx+dy*dy).toFixed(1),distV:dy.toFixed(1)});
+      rulerStep={};if(h)h.textContent='Use "Régua" → 2 pontos';renderRulers();scheduleSave();draw();
+    }
+  } else if(curTool==='tri'){
+    const h=document.getElementById('toolHint');
+    if(!triStep.p1){triStep.p1={px,py};if(h)h.textContent='P1 marcado — clique no 2º ponto';draw();}
+    else if(!triStep.p2){triStep.p2={px,py};if(h)h.textContent='P2 marcado — clique no 3º ponto';draw();}
+    else{
+      pushHistory(curView,'tri');
+      const p1=triStep.p1,p2=triStep.p2,p3={px,py};
+      const area=Math.abs((p2.px-p1.px)*(p3.py-p1.py)-(p3.px-p1.px)*(p2.py-p1.py))/2*10000;
+      triangles[curView].push({p1,p2,p3,area:area.toFixed(2),side:triSide});
+      triStep={};if(h)h.textContent='Triângulo marcado! Selecione o outro lado e repita.';
+      renderTriList();scheduleSave();draw();
+    }
+  } else if(curTool==='annot'){
+    handleAnnotClick(px,py);
+  } else if(curTool==='calib'){
+    handleCalibClick(px,py,canvas);
+  }
+}
+
+function calcAngle(a,v,b,w,h){
+  const ax=(a.px-v.px)*w,ay=(a.py-v.py)*h,bx=(b.px-v.px)*w,by=(b.py-v.py)*h;
+  const dot=ax*bx+ay*by,ma=Math.sqrt(ax*ax+ay*ay),mb=Math.sqrt(bx*bx+by*by);
+  if(!ma||!mb)return 0;
+  return parseFloat((Math.acos(Math.min(1,Math.max(-1,dot/(ma*mb))))*180/Math.PI).toFixed(1));
+}
+
+function renderLMList(){
+  // simetria é recalculada após renderizar pontos
+  setTimeout(renderSimetria,0);
+  const c=document.getElementById('lmList');if(!c)return;
+  const lms=landmarks[curView]||[];
+  if(!lms.length){c.innerHTML='<p style="font-size:10px;color:var(--text-hint)">Nenhum ponto marcado</p>';return;}
+  c.innerHTML='';
+  lms.forEach((lm,i)=>{
+    const row=document.createElement('div');row.className='lm-row';
+    row.innerHTML=`<span class="lm-dot" style="background:${lm.color}"></span><span class="lm-name">${i+1}. ${lm.name}</span><span class="lm-coords">${Math.round(lm.px*100)}%,${Math.round(lm.py*100)}%</span><button class="lm-del" onclick="delLM(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+
+// ─── SIMETRIA AUTOMÁTICA ───
+function renderSimetria(){
+  const sec=document.getElementById('simetriaSection');
+  const c=document.getElementById('simetriaList');
+  if(!c||!curView)return;
+  const lms=landmarks[curView]||[];
+  
+  // Detectar pares: mesmo nome base, lados D e E
+  const pairs=[];
+  lms.forEach((lm,i)=>{
+    const m=lm.name.trim().match(/^(.+?)\s+([Dd])$/);
+    if(!m)return;
+    const base=m[1].trim().toLowerCase();
+    const j=lms.findIndex((l,li)=>li!==i&&l.name.trim().match(new RegExp('^'+base.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s+[Ee]$','i')));
+    if(j<0)return;
+    const dy=Math.abs(lm.py-lms[j].py)*100;
+    const higherSide=lm.py<lms[j].py?'D':'E';
+    const sev=dy<1.5?'ok':dy<3.5?'warn':'alert';
+    pairs.push({name:m[1],dy:dy.toFixed(1),higherSide,sev});
+  });
+
+  if(!pairs.length){sec.style.display='none';return;}
+  sec.style.display='';
+
+  // Score geral
+  const avgDy=pairs.reduce((s,p)=>s+parseFloat(p.dy),0)/pairs.length;
+  const scoreSev=avgDy<1.5?'ok':avgDy<3?'warn':'alert';
+  const scoreLabel={'ok':'Simetria boa','warn':'Assimetria leve','alert':'Assimetria significativa'}[scoreSev];
+  const scoreColor={'ok':'#10b981','warn':'#f59e0b','alert':'#ef4444'}[scoreSev];
+
+  let html=`<div class="sym-score">
+    <span style="width:8px;height:8px;border-radius:50%;background:${scoreColor};flex-shrink:0;display:inline-block"></span>
+    <span style="color:${scoreColor}">${scoreLabel}</span>
+    <span style="font-size:9px;color:var(--text-hint);font-weight:400">Δ médio ${avgDy.toFixed(1)}%</span>
+  </div>`;
+
+  pairs.forEach(p=>{
+    const barW=Math.min(60,Math.round(parseFloat(p.dy)*12));
+    html+=`<div class="sym-row ${p.sev}">
+      <span class="sym-name">${p.name}</span>
+      <div class="sym-bar" style="width:${barW}px"></div>
+      <span class="sym-delta">${p.dy}%</span>
+      <span class="sym-side" title="${p.higherSide} mais alto">${p.higherSide}↑</span>
+    </div>`;
+  });
+  c.innerHTML=html;
+}
+
+function renderAngles(){
+  const c=document.getElementById('angleList');if(!c)return;
+  const angs=angles[curView]||[],lms=landmarks[curView]||[];
+  if(!angs.length){c.innerHTML='<p style="font-size:10px;color:var(--text-hint)">Use "Ângulo" → 3 pontos</p>';return;}
+  c.innerHTML='';
+  angs.forEach((ang,i)=>{
+    const row=document.createElement('div');row.className='angle-item';
+    const n1=lms[ang.a]?.name||'?',nv=lms[ang.v]?.name||'?',n2=lms[ang.b]?.name||'?';
+    const finding=getAngleFinding(n1,nv,n2,ang.deg);
+    row.innerHTML=`<div>
+      <span style="color:var(--text-muted);font-size:10px">${n1}→${nv}→${n2}</span>
+      ${finding?`<br><span class="achado-badge achado-${finding.cls}">${finding.text}</span><span style="font-size:9px;color:var(--text-hint)"> Δ${finding.dev}°</span>`:''}
+    </div><div style="display:flex;align-items:center;gap:4px"><span class="angle-val">${ang.deg}°</span><button class="angle-del" onclick="delAngle(${i})">×</button></div>`;
+    c.appendChild(row);
+  });
+}
+function renderRulers(){
+  const c=document.getElementById('rulerList');if(!c)return;
+  const rs=rulers[curView]||[];
+  if(!rs.length){c.innerHTML='<p style="font-size:10px;color:var(--text-hint)">Use "Régua" → 2 pontos</p>';return;}
+  c.innerHTML='';
+  rs.forEach((r,i)=>{
+    const row=document.createElement('div');row.className='ruler-item';
+    const cal=calibState[curView];
+    const distCm=cal&&cal.pxPerCm&&document.getElementById('mainCanvas')?(()=>{const canvas=document.getElementById('mainCanvas');const dxPx=Math.abs(r.p2.px-r.p1.px)*canvas.width;const dyPx=Math.abs(r.p2.py-r.p1.py)*canvas.height;const distPx=Math.sqrt(dxPx*dxPx+dyPx*dyPx);return (distPx/cal.pxPerCm).toFixed(1)+'cm';})():null;
+    row.innerHTML=`<div><div style="font-weight:500;font-size:11px">Régua ${i+1}</div><div style="font-size:10px;color:var(--text-muted)">Total: <b>${r.dist}%</b>${distCm?' = <b style=\"color:var(--success-text)\">${distCm}</b>':''} · Vertical: <b>${r.distV}%</b></div></div><button class="ruler-del" onclick="delRuler(${i})">×</button>`;
+    c.appendChild(row);
+  });
+}
+function renderTriList(){
+  const c=document.getElementById('triList');if(!c)return;
+  const tris=triangles[curView]||[];
+  if(!tris.length){c.innerHTML='<p style="font-size:10px;color:var(--text-hint)">Use "Triângulo" → 3 pontos por lado</p>';return;}
+  c.innerHTML='';
+  const areasD=tris.filter(t=>t.side==='D').map(t=>parseFloat(t.area));
+  const areasE=tris.filter(t=>t.side==='E').map(t=>parseFloat(t.area));
+  const totalD=areasD.reduce((a,b)=>a+b,0),totalE=areasE.reduce((a,b)=>a+b,0);
+  if(totalD>0&&totalE>0){
+    const pct=(Math.abs(totalD-totalE)/Math.max(totalD,totalE)*100).toFixed(1);
+    const maior=totalD>totalE?'D':'E';
+    let classif,cor;
+    if(parseFloat(pct)<10){classif='Simétrico';cor='#1a6b35';}
+    else if(parseFloat(pct)<25){classif='Leve assimetria';cor='#7a5c00';}
+    else{classif='Assimetria significativa';cor='#8a1c1c';}
+    const box=document.createElement('div');
+    box.style.cssText='background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:8px';
+    box.innerHTML=`<div style="font-size:11px;font-weight:600;margin-bottom:4px">Comparação D vs E</div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px"><span style="color:#1e40af">D: ${totalD.toFixed(2)} u²</span><span style="color:#c2410c">E: ${totalE.toFixed(2)} u²</span></div>
+    <div style="font-size:11px">Δ <b>${pct}%</b> (lado ${maior} maior)</div>
+    <div style="font-size:11px;font-weight:600;color:${cor}">${classif}</div>`;
+    c.appendChild(box);
+  }
+  tris.forEach((tri,i)=>{
+    const isD=tri.side==='D',row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid var(--border);font-size:11px';
+    row.innerHTML=`<span style="color:${isD?'#1e40af':'#c2410c'}">● Lado ${tri.side} — ${tri.area} u²</span><button onclick="delTri(${i})" style="background:none;border:none;cursor:pointer;color:var(--text-hint);font-size:13px">×</button>`;
+    c.appendChild(row);
+  });
+}
+function delLM(i){pushHistory(curView,'lm');landmarks[curView].splice(i,1);angles[curView]=(angles[curView]||[]).filter(a=>a.a!==i&&a.v!==i&&a.b!==i);renderLMList();renderAngles();scheduleSave();draw();}
+function delAngle(i){pushHistory(curView,'angle');angles[curView].splice(i,1);renderAngles();scheduleSave();draw();}
+function delRuler(i){pushHistory(curView,'ruler');rulers[curView].splice(i,1);renderRulers();scheduleSave();draw();}
+function delTri(i){pushHistory(curView,'tri');triangles[curView].splice(i,1);renderTriList();scheduleSave();draw();}
+function clearAll(){
+  if(!curView)return;pushHistory(curView);
+  landmarks[curView]=[];angles[curView]=[];rulers[curView]=[];triangles[curView]=[];annotations[curView]=[];angleStep={};rulerStep={};triStep={};
+  renderLMList();renderAngles();renderRulers();renderTriList();scheduleSave();draw();
+}
+
+// ─── DRAW ───
+function drawOnCanvas(canvas,view,forceLW){
+  const img=imgs[view];if(!img)return;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(img,0,0,canvas.width,canvas.height);
+  const s=getState(view),lw=forceLW!==undefined?forceLW:s.lW;
+  // GRADE — abaixo de tudo
+  drawGrade(ctx,canvas,s,lw);
+
+  if(s.linesOn!==false){
+    ctx.save();ctx.globalAlpha=s.lineOp;
+    if(s.vAxisOn!==false){
+      const x=canvas.width*(s.vPos/100);
+      ctx.strokeStyle=s.vColor;ctx.lineWidth=lw;
+      ctx.setLineDash([Math.max(6,lw*6),Math.max(4,lw*3)]);
+      ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,canvas.height);ctx.stroke();
+    }
+    ctx.strokeStyle=s.hColor;ctx.setLineDash([Math.max(5,lw*5),Math.max(3,lw*2)]);
+    const vis=s.hLinesVis||s.hLines.map(()=>true);
+    s.hLines.forEach((p,i)=>{if(vis[i]===false)return;const y=canvas.height*(p/100);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(canvas.width,y);ctx.stroke();});
+    ctx.setLineDash([]);ctx.globalAlpha=1;ctx.restore();
+  }
+  const lms=landmarks[view]||[],r=LM_RADII[lmSize-1],fs=Math.max(8,r*1.9);
+  lms.forEach((lm,i)=>{
+    const px=lm.px*canvas.width,py=lm.py*canvas.height;
+    ctx.globalAlpha=.92;ctx.fillStyle=lm.color;ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=lmBorderColor==='black'?'rgba(0,0,0,.9)':'rgba(255,255,255,.9)';ctx.lineWidth=Math.max(1,lw*.8);ctx.stroke();
+    ctx.fillStyle=lmBorderColor==='black'?'#111':'#fff';ctx.font=`600 ${fs}px Inter,sans-serif`;ctx.textBaseline='middle';
+    ctx.fillText((i+1)+'',px+r+2,py);ctx.globalAlpha=1;ctx.lineWidth=lw;
+  });
+  (angles[view]||[]).forEach(ang=>{
+    const p1=lms[ang.a],pv=lms[ang.v],p2=lms[ang.b];if(!p1||!pv||!p2)return;
+    const x1=p1.px*canvas.width,y1=p1.py*canvas.height,xv=pv.px*canvas.width,yv=pv.py*canvas.height,x2=p2.px*canvas.width,y2=p2.py*canvas.height;
+    ctx.globalAlpha=.75;ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=Math.max(1,lw);ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(xv,yv);ctx.lineTo(x2,y2);ctx.stroke();ctx.setLineDash([]);
+    const mx=(x1+xv+x2)/3,my=(y1+yv+y2)/3-Math.max(12,lw*10),fsa=Math.max(12,lw*10);
+    ctx.font=`600 ${fsa}px Inter,sans-serif`;ctx.textBaseline='middle';
+    const tw=ctx.measureText(ang.deg+'°').width;
+    ctx.globalAlpha=.85;ctx.fillStyle='rgba(0,0,0,.65)';
+    ctx.beginPath();ctx.roundRect(mx-tw/2-5,my-fsa/2-3,tw+10,fsa+6,4);ctx.fill();
+    ctx.fillStyle='#fff';ctx.fillText(ang.deg+'°',mx-tw/2,my);ctx.globalAlpha=1;ctx.lineWidth=lw;
+  });
+  (rulers[view]||[]).forEach((ru,i)=>{
+    const x1=ru.p1.px*canvas.width,y1=ru.p1.py*canvas.height,x2=ru.p2.px*canvas.width,y2=ru.p2.py*canvas.height;
+    ctx.globalAlpha=.9;ctx.strokeStyle='#ffd93d';ctx.lineWidth=Math.max(1.5,lw);ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    [[x1,y1],[x2,y2]].forEach(([px,py])=>{ctx.fillStyle='#ffd93d';ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();});
+    const mx=(x1+x2)/2,my=(y1+y2)/2-10,label=`${ru.dist}% V:${ru.distV}%`,fsR=Math.max(11,lw*9);
+    ctx.font=`600 ${fsR}px Inter,sans-serif`;ctx.textBaseline='middle';
+    const tw=ctx.measureText(label).width;
+    ctx.globalAlpha=.85;ctx.fillStyle='rgba(0,0,0,.65)';
+    ctx.beginPath();ctx.roundRect(mx-tw/2-5,my-fsR/2-3,tw+10,fsR+6,4);ctx.fill();
+    ctx.fillStyle='#ffd93d';ctx.fillText(label,mx-tw/2,my);ctx.globalAlpha=1;ctx.lineWidth=lw;
+  });
+  (triangles[view]||[]).forEach(tri=>{
+    const isD=tri.side==='D';
+    const x1=tri.p1.px*canvas.width,y1=tri.p1.py*canvas.height,x2=tri.p2.px*canvas.width,y2=tri.p2.py*canvas.height,x3=tri.p3.px*canvas.width,y3=tri.p3.py*canvas.height;
+    ctx.save();ctx.globalAlpha=.28;ctx.fillStyle=isD?'#3b82f6':'#f97316';
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.closePath();ctx.fill();
+    ctx.globalAlpha=.8;ctx.strokeStyle=isD?'#1d4ed8':'#ea580c';ctx.lineWidth=Math.max(1.5,lw);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineTo(x3,y3);ctx.closePath();ctx.stroke();
+    const cx=(x1+x2+x3)/3,cy=(y1+y2+y3)/3,fsT=Math.max(11,lw*9);
+    ctx.font=`700 ${fsT}px Inter,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
+    ctx.globalAlpha=.92;ctx.fillStyle=isD?'#1d4ed8':'#ea580c';ctx.fillText(tri.side,cx,cy);
+    ctx.textAlign='left';ctx.restore();
+  });
+  if(curTool==='tri'&&view===curView){
+    [triStep.p1,triStep.p2].forEach(pt=>{
+      if(!pt)return;
+      const px=pt.px*canvas.width,py=pt.py*canvas.height,isD=triSide==='D';
+      ctx.globalAlpha=.85;ctx.fillStyle=isD?'#3b82f6':'#f97316';
+      ctx.beginPath();ctx.arc(px,py,6,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;
+    });
+    if(triStep.p1&&triStep.p2){
+      ctx.globalAlpha=.5;ctx.strokeStyle=triSide==='D'?'#3b82f6':'#f97316';ctx.lineWidth=Math.max(1,lw);ctx.setLineDash([5,4]);
+      ctx.beginPath();ctx.moveTo(triStep.p1.px*canvas.width,triStep.p1.py*canvas.height);ctx.lineTo(triStep.p2.px*canvas.width,triStep.p2.py*canvas.height);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+    }
+  }
+  if(angleStep.a!==undefined){const lm=lms[angleStep.a];if(lm){ctx.globalAlpha=.7;ctx.strokeStyle='#fff';ctx.lineWidth=lw*2;ctx.beginPath();ctx.arc(lm.px*canvas.width,lm.py*canvas.height,r+5,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;ctx.lineWidth=lw;}}
+  if(rulerStep.p1){ctx.globalAlpha=.8;ctx.fillStyle='#ffd93d';ctx.beginPath();ctx.arc(rulerStep.p1.px*canvas.width,rulerStep.p1.py*canvas.height,6,0,Math.PI*2);ctx.fill();ctx.globalAlpha=1;}
+  ctx.restore();
+  // calibração e anotações (desenhadas fora do save/restore principal)
+  const sc=forceLW!==undefined?(forceLW/lw)||1:1;
+  drawCalib(ctx,canvas,view,sc);
+  drawAnnotations(ctx,canvas,view,sc);
+}
+function draw(){
+  if(!curView||!imgs[curView])return;
+  if(viewMode==='compare'){renderCompare();return;}
+  const canvas=document.getElementById('mainCanvas');if(!canvas)return;
+  const wrap=document.getElementById('singleWrap');
+  const maxW=Math.max((wrap?wrap.clientWidth:600),200);
+  const maxH=Math.max((wrap?wrap.clientHeight:600),200);
+  const img=imgs[curView];
+  const scale=Math.min(1,maxW/img.width,maxH/img.height);
+  canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+  drawOnCanvas(canvas,curView,S().lW);renderLMList();renderAngles();renderRulers();renderTriList();
+}
+
+// ─── EXPORTAR ───
+function buildExportCanvas(view){
+  const img=imgs[view],canvas=document.createElement('canvas');
+  canvas.width=img.width;canvas.height=img.height;
+  const mc=document.getElementById('mainCanvas'),scale=img.width/Math.max(mc?mc.width:800,1);
+  drawOnCanvas(canvas,view,getState(view).lW*scale);return canvas;
+}
+function buildExports(){
+  const grid=document.getElementById('exportGrid');if(!grid)return;
+  grid.innerHTML='';let any=false;
+  VIEWS.forEach(v=>{
+    if(!imgs[v])return;any=true;
+    const full=buildExportCanvas(v),dataUrl=full.toDataURL('image/png');
+    const prev=document.createElement('canvas');const pw=Math.min(full.width,600);
+    prev.width=pw;prev.height=Math.round(full.height*pw/full.width);
+    prev.getContext('2d').drawImage(full,0,0,prev.width,prev.height);
+    const card=document.createElement('div');card.className='export-card';
+    const im=document.createElement('img');im.className='export-preview';im.src=prev.toDataURL();im.alt=VL[v];card.appendChild(im);
+    const nome=document.getElementById('p_nome').value.trim()||'paciente';
+    const foot=document.createElement('div');foot.className='export-footer';
+    foot.innerHTML=`<span class="export-name">${VL[v]}</span><a class="export-dl" href="${dataUrl}" download="postural_${nome.replace(/\s+/g,'_')}_${v}.png">↓ Baixar</a>`;
+    card.appendChild(foot);grid.appendChild(card);
+  });
+  if(!any)grid.innerHTML='<p style="font-size:12px;color:var(--text-hint);grid-column:1/-1">Nenhuma foto carregada.</p>';
+}
+
+// ─── PDF ───
+let logoDataUrl=null,sigCtx=null,sigDrawing=false;
+function loadLogo(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();r.onload=ev=>{logoDataUrl=ev.target.result;document.getElementById('logo_img').src=logoDataUrl;document.getElementById('logo_preview').style.display='block';buildPdfPreview();};r.readAsDataURL(file);
+}
+function removeLogo(){logoDataUrl=null;document.getElementById('logo_preview').style.display='none';document.getElementById('pdf_logo').value='';buildPdfPreview();}
+function initSigCanvas(){
+  const c=document.getElementById('sigCanvas');if(!c||sigCtx)return;
+  sigCtx=c.getContext('2d');sigCtx.strokeStyle='#111';sigCtx.lineWidth=2;sigCtx.lineCap='round';sigCtx.lineJoin='round';
+  function pos(e){const r=c.getBoundingClientRect(),sx=c.width/r.width;return e.touches?{x:(e.touches[0].clientX-r.left)*sx,y:(e.touches[0].clientY-r.top)*sx}:{x:(e.clientX-r.left)*sx,y:(e.clientY-r.top)*sx};}
+  c.addEventListener('mousedown',e=>{sigDrawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);});
+  c.addEventListener('mousemove',e=>{if(!sigDrawing)return;const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();});
+  c.addEventListener('mouseup',()=>{sigDrawing=false;});
+  c.addEventListener('touchstart',e=>{e.preventDefault();sigDrawing=true;const p=pos(e);sigCtx.beginPath();sigCtx.moveTo(p.x,p.y);},{passive:false});
+  c.addEventListener('touchmove',e=>{e.preventDefault();if(!sigDrawing)return;const p=pos(e);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();},{passive:false});
+  c.addEventListener('touchend',()=>{sigDrawing=false;});
+}
+function clearSig(){const c=document.getElementById('sigCanvas');if(c&&sigCtx)sigCtx.clearRect(0,0,c.width,c.height);}
+function getSig(){const c=document.getElementById('sigCanvas');return c?c.toDataURL('image/png'):null;}
+function getPdfData(){
+  const v=id=>document.getElementById(id)?.value||'';
+  const nome=v('p_nome')||'—',nasc=v('p_nasc')?new Date(v('p_nasc')).toLocaleDateString('pt-BR'):'—';
+  const idade=v('p_idade')||'—',sexo=v('p_sexo')||'—';
+  const peso=v('p_peso')?v('p_peso')+' kg':'—',altura=v('p_altura')?v('p_altura')+' cm':'—';
+  const imc=v('p_imc')||'—',data=v('p_data')?new Date(v('p_data')).toLocaleDateString('pt-BR'):'—';
+  const prof=v('p_prof')||'—',aval=v('p_aval')||'—',queixa=v('p_queixa')||'—';
+  const hist=v('p_hist')||'—',obj=v('p_obj')||'—';
+  const clinica=v('pdf_clinica')||'Avaliação Postural',endereco=v('pdf_endereco')||'';
+  const frontal=v('pdf_achados_frontal')||'',sagital=v('pdf_achados_sagital')||'',conclusao=v('pdf_conclusao')||'';
+  let triSummary='';
+  VIEWS.forEach(v2=>{
+    const tris=triangles[v2]||[];if(!tris.length)return;
+    const tD=tris.filter(t=>t.side==='D').reduce((s,t)=>s+parseFloat(t.area),0);
+    const tE=tris.filter(t=>t.side==='E').reduce((s,t)=>s+parseFloat(t.area),0);
+    if(tD>0&&tE>0){
+      const pct=(Math.abs(tD-tE)/Math.max(tD,tE)*100).toFixed(1);
+      const classif=parseFloat(pct)<10?'Simétrico':parseFloat(pct)<25?'Leve assimetria':'Assimetria significativa';
+      triSummary+=`${VL[v2]}: D=${tD.toFixed(1)}u² / E=${tE.toFixed(1)}u² — Δ${pct}% — ${classif}\n`;
+    }
+  });
+  return{nome,nasc,idade,sexo,peso,altura,imc,data,prof,aval,queixa,hist,obj,clinica,endereco,frontal,sagital,conclusao,triSummary};
+}
+function buildPdfHTML(forPrint){
+  const d=getPdfData(),sig=getSig();
+  const imgTags=VIEWS.filter(v=>imgs[v]).map(v=>({view:VL[v],src:buildExportCanvas(v).toDataURL('image/jpeg',.85),anglesTable:buildAnglesTable(v)}));
+  const logoHtml=logoDataUrl?`<img src="${logoDataUrl}" style="max-height:60px;max-width:160px;object-fit:contain">`:`<div style="font-size:22px;font-weight:700;color:#1a1a18">${d.clinica}</div>`;
+  const photosHtml=imgTags.length?`<div style="display:grid;grid-template-columns:repeat(${Math.min(imgTags.length,2)},1fr);gap:10px;margin:12px 0">${imgTags.map(t=>`<div style="text-align:center"><div style="font-size:10px;font-weight:600;color:#555;margin-bottom:4px;text-transform:uppercase">${t.view}</div><img src="${t.src}" style="width:100%;border-radius:6px;border:1px solid #e0e0e0">${t.anglesTable?`<div style="text-align:left;margin-top:4px">${t.anglesTable}</div>`:''}</div>`).join('')}</div>`:'';
+  const achadosHtml=(d.frontal||d.sagital||d.conclusao)?`<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:10px">ACHADOS POSTURAIS</div>${d.frontal?`<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:600;color:#555;text-transform:uppercase;margin-bottom:3px">Plano frontal</div><div style="font-size:12px;color:#333;line-height:1.6;white-space:pre-wrap">${d.frontal}</div></div>`:''} ${d.sagital?`<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:600;color:#555;text-transform:uppercase;margin-bottom:3px">Plano sagital</div><div style="font-size:12px;color:#333;line-height:1.6;white-space:pre-wrap">${d.sagital}</div></div>`:''} ${d.conclusao?`<div><div style="font-size:10px;font-weight:600;color:#555;text-transform:uppercase;margin-bottom:3px">Conclusão e conduta</div><div style="font-size:12px;color:#333;line-height:1.6;white-space:pre-wrap">${d.conclusao}</div></div>`:''}</div>`:'';
+  const triHtml=d.triSummary?`<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:10px">TRIÂNGULO DA TAILLE</div><div style="font-size:12px;color:#333;line-height:1.8;white-space:pre-wrap">${d.triSummary}</div></div>`:'';
+  const sigHtml=sig?`<div style="margin-top:24px;display:flex;flex-direction:column;align-items:flex-end"><img src="${sig}" style="max-width:220px;max-height:70px;object-fit:contain;border-bottom:1px solid #333"><div style="font-size:10px;color:#555;margin-top:4px">${d.aval||'Avaliador'}</div><div style="font-size:10px;color:#888">${d.data}</div></div>`:'';
+  const printCss=forPrint?`<style>@page{size:A4;margin:18mm 15mm 20mm}body{margin:0;padding:0;font-family:'Inter',system-ui,sans-serif}</style>`:'';
+  return `${printCss}<div style="font-family:'Inter',system-ui,sans-serif;color:#111;max-width:740px;margin:0 auto">
+  <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #1a1a18;padding-bottom:12px;margin-bottom:14px">
+    <div>${logoHtml}${d.clinica&&logoDataUrl?`<div style="font-size:13px;font-weight:600;margin-top:4px">${d.clinica}</div>`:''}</div>
+    <div style="text-align:right"><div style="font-size:18px;font-weight:700">LAUDO POSTURAL</div><div style="font-size:11px;color:#555">Data: ${d.data}</div>${d.endereco?`<div style="font-size:10px;color:#888;margin-top:2px">${d.endereco}</div>`:''}</div>
+  </div>
+  <div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:10px">DADOS DO PACIENTE</div>
+  <table style="width:100%;border-collapse:collapse;font-size:12px">
+    <tr><td style="padding:3px 8px 3px 0;color:#555;width:120px">Nome</td><td style="padding:3px 0;font-weight:500">${d.nome}</td><td style="padding:3px 8px 3px 16px;color:#555;width:100px">Nascimento</td><td style="padding:3px 0;font-weight:500">${d.nasc}</td></tr>
+    <tr><td style="padding:3px 8px 3px 0;color:#555">Idade</td><td style="padding:3px 0;font-weight:500">${d.idade}</td><td style="padding:3px 8px 3px 16px;color:#555">Sexo</td><td style="padding:3px 0;font-weight:500">${d.sexo}</td></tr>
+    <tr><td style="padding:3px 8px 3px 0;color:#555">Peso</td><td style="padding:3px 0;font-weight:500">${d.peso}</td><td style="padding:3px 8px 3px 16px;color:#555">Altura</td><td style="padding:3px 0;font-weight:500">${d.altura}</td></tr>
+    <tr><td style="padding:3px 8px 3px 0;color:#555">IMC</td><td style="padding:3px 0;font-weight:500">${d.imc}</td><td style="padding:3px 8px 3px 16px;color:#555">Profissão</td><td style="padding:3px 0;font-weight:500">${d.prof}</td></tr>
+    <tr><td style="padding:3px 8px 3px 0;color:#555">Queixa</td><td colspan="3" style="padding:3px 0;font-weight:500">${d.queixa}</td></tr>
+  </table></div>
+  <div style="margin-bottom:14px"><div style="font-size:13px;font-weight:600;border-bottom:2px solid #1a1a18;padding-bottom:4px;margin-bottom:10px">SIMETRÓGRAFO POSTURAL</div>${photosHtml}</div>
+  ${achadosHtml}${triHtml}${sigHtml}
+  <div style="margin-top:24px;padding-top:8px;border-top:1px solid #e0e0e0;display:flex;justify-content:space-between">
+    <div style="font-size:10px;color:#aaa">${d.clinica}${d.endereco?' · '+d.endereco:''}</div>
+    <div style="font-size:10px;color:#aaa">Avaliador: ${d.aval} · ${d.data}</div>
+  </div></div>`;
+}
+function buildPdfPreview(){const p=document.getElementById('pdfPreview');if(p)p.innerHTML=buildPdfHTML(false);}
+function generatePDF(){
+  buildPdfPreview();
+  const win=window.open('','_blank');
+  if(!win){alert('Permita pop-ups para este site.');return;}
+  win.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Postural">
+<link rel="apple-touch-icon" href="/icon-192.png"><style>*{box-sizing:border-box;margin:0;padding:0}@page{size:A4;margin:18mm 15mm 20mm}body{font-family:'Inter',system-ui,sans-serif;padding:20px;background:#fff}</style></head><body>${buildPdfHTML(true)}<script>window.onload=()=>{window.print();}<\/script></body></html>`);
+  win.document.close();
+}
+
+
+// ─── CHIPS DE ACHADOS ───
+function addAchado(fieldId,text){
+  const el=document.getElementById(fieldId);if(!el)return;
+  if(el.value&&!el.value.endsWith('\n'))el.value+='. ';
+  el.value+=text;scheduleSave();el.focus();
+}
+
+// ─── TEMPLATES POR MODALIDADE ───
+const TEMPLATES={
+  corrida:{
+    obj:'Melhora do desempenho na corrida e prevenção de lesões por overuse',
+    queixa:'Avaliação de rotina para programação de treinamento',
+    achados_frontal:'Avaliação de alinhamento pélvico e de membros inferiores para identificar assimetrias que possam influenciar a biomecânica da passada.',
+    achados_sagital:'Avaliação da postura sagital com ênfase na posição pélvica, lordose lombar e postura de cabeça durante a corrida.',
+    conclusao:'Protocolo de avaliação postural para corrida. Verificar padrão de pisada e alinhamento de joelhos.',
+    linhas:[10,28,45,60,75,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  beach_tennis:{
+    obj:'Otimização da postura para beach tennis e prevenção de lesões em areia',
+    queixa:'Avaliação postural para programação de treinamento em beach tennis',
+    achados_frontal:'Avaliação de assimetrias de ombro e cintura escapular típicas de esportes de raquete unilaterais.',
+    achados_sagital:'Avaliação de hipercifose torácica e anteriorização de cabeça frequentes em atletas de beach tennis.',
+    conclusao:'Protocolo postural para beach tennis. Atenção à sobrecarga unilateral e adaptações ao jogo em areia.',
+    linhas:[10,25,42,58,73,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  futebol:{
+    obj:'Avaliação postural para futebol — prevenção de lesões e otimização da performance',
+    queixa:'Avaliação de rotina pré-temporada',
+    achados_frontal:'Verificar alinhamento de joelhos (valgo/varo), pelve e ombros. Assimetrias frequentes em jogadores.',
+    achados_sagital:'Avaliar anteversão pélvica e lordose lombar, comuns em futebolistas por encurtamento de iliopsoas.',
+    conclusao:'Protocolo postural para futebol. Atenção ao quadrante inferior e estabilidade pélvica.',
+    linhas:[10,28,45,60,75,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  natacao:{
+    obj:'Avaliação postural para natação — análise de ombros e coluna',
+    queixa:'Avaliação de rotina para nadador',
+    achados_frontal:'Avaliação de assimetrias de ombro e cintura escapular. Abdução escapular comum em nadadores.',
+    achados_sagital:'Verificar hipercifose torácica e protração de ombros, frequentes em nadadores de crawl e borboleta.',
+    conclusao:'Protocolo postural para natação. Foco na mobilidade de ombro e estabilidade escapular.',
+    linhas:[10,27,43,57,72,87],
+    lbls:['Cabeça','Ombros/Escápulas','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  musculacao:{
+    obj:'Avaliação postural para musculação — identificar desbalances musculares',
+    queixa:'Avaliação postural para otimização do treinamento',
+    achados_frontal:'Verificar simetria de ombros e pelve. Desbalances por treinamento preferencial de grupos musculares.',
+    achados_sagital:'Avaliar hipercifose torácica e anteversão pélvica, comuns em praticantes de musculação.',
+    conclusao:'Protocolo postural para musculação. Identificar grupos musculares encurtados vs alongados para reequilíbrio.',
+    linhas:[10,28,45,60,75,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  idoso:{
+    obj:'Melhora postural, equilíbrio e qualidade de vida',
+    queixa:'Avaliação postural geriátrica — prevenção de quedas e melhora funcional',
+    achados_frontal:'Avaliação de alinhamento em paciente idoso. Verificar encurtamentos adaptativos e assimetrias de carga.',
+    achados_sagital:'Avaliar cifose dorsal de senilidade, retificação lombar, anteriorização de cabeça e flexo de joelhos — alterações esperadas no envelhecimento.',
+    conclusao:'Protocolo postural geriátrico. Foco em equilíbrio, prevenção de quedas e manutenção funcional.',
+    linhas:[12,28,44,58,73,87],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  sedentario:{
+    obj:'Melhora postural e redução de dor musculoesquelética',
+    queixa:'Dor postural por postura sentada prolongada',
+    achados_frontal:'Verificar assimetrias por postura sentada prolongada e dominância lateral.',
+    achados_sagital:'Avaliar síndrome cruzada superior e inferior típica do perfil sedentário: anteriorização de cabeça, hipercifose torácica, anteversão pélvica.',
+    conclusao:'Padrão postural típico de perfil sedentário. Protocolo de ativação de estabilizadores e reeducação postural.',
+    linhas:[10,28,45,60,75,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  },
+  pos_cirurgico:{
+    obj:'Acompanhamento postural pós-cirúrgico e reabilitação',
+    queixa:'Avaliação pós-cirúrgica para acompanhamento evolutivo',
+    achados_frontal:'Avaliação de compensações posturais decorrentes do pós-operatório e adaptações de descarga de peso.',
+    achados_sagital:'Verificar adaptações sagitais pós-cirúrgicas, compensações de dor e padrões antálgicos.',
+    conclusao:'Protocolo pós-cirúrgico. Acompanhamento evolutivo com reavaliações periódicas conforme protocolo de reabilitação.',
+    linhas:[10,28,45,60,75,88],
+    lbls:['Cabeça','Ombros','Cristas ilíacas','Trocânteres','Joelhos','Tornozelos']
+  }
+};
+
+function applyTemplate(key){
+  if(!key)return;
+  const t=TEMPLATES[key];if(!t)return;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&!el.value)el.value=v;};
+  set('p_obj',t.obj);set('p_queixa',t.queixa);
+  set('pdf_achados_frontal',t.achados_frontal);
+  set('pdf_achados_sagital',t.achados_sagital);
+  set('pdf_conclusao',t.conclusao);
+  // aplica linhas do template à vista atual (ou salva para aplicar quando foto for carregada)
+  templateLinhas={hLines:[...t.linhas],hLbls:[...t.lbls]};
+  showToast('Template "'+key.replace('_',' ')+'" aplicado!');
+  scheduleSave();
+}
+let templateLinhas=null;
+
+// ─── COMPARATIVO ANTES/DEPOIS ───
+let cmpData={aval1:null,aval2:null};
+
+async function loadCmpAvals(){
+  if(!currentUser)return;
+  const {data,error}=await sb.from('avaliacoes')
+    .select('id,paciente_nome,data_avaliacao,status,foto_anterior,foto_posterior,foto_esquerdo,foto_direito')
+    .eq('user_id',currentUser.id)
+    .order('data_avaliacao',{ascending:false});
+  if(error||!data.length){showToast('Nenhuma avaliação encontrada.');return;}
+  const buildOptions=()=>data.map(a=>{
+    const dt=a.data_avaliacao?new Date(a.data_avaliacao+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+    return `<option value="${a.id}">${a.paciente_nome||'(sem nome)'} — ${dt}</option>`;
+  }).join('');
+  const sel1=document.getElementById('cmp_aval1'),sel2=document.getElementById('cmp_aval2');
+  sel1.innerHTML='<option value="">Selecionar...</option>'+buildOptions();
+  sel2.innerHTML='<option value="">Selecionar...</option>'+buildOptions();
+  // store data for preview
+  cmpData.list=data;
+  sel1.onchange=()=>showCmpPreview(1,sel1.value,data);
+  sel2.onchange=()=>showCmpPreview(2,sel2.value,data);
+  showToast('Avaliações carregadas!');
+}
+
+function showCmpPreview(n,id,data){
+  const aval=data.find(a=>a.id===id);
+  const lbl=document.getElementById('cmp_label'+n);
+  const fotos=document.getElementById('cmp_fotos'+n);
+  const preview=document.getElementById('cmp_preview'+n);
+  if(!aval){preview.style.display='none';return;}
+  cmpData['aval'+n]=aval;
+  const dt=aval.data_avaliacao?new Date(aval.data_avaliacao+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  lbl.textContent=(n===1?'Antes':'Depois')+': '+( aval.paciente_nome||'(sem nome)')+' — '+dt;
+  const FOTO_VIEWS=['anterior','posterior','esquerdo','direito'];
+  const FOTO_LABELS=['Ant.','Post.','Esq.','Dir.'];
+  fotos.innerHTML=FOTO_VIEWS.map((v,i)=>{
+    const src=aval['foto_'+v];
+    return src?`<div style="text-align:center"><div style="font-size:10px;color:var(--text-muted);margin-bottom:2px">${FOTO_LABELS[i]}</div><img src="${src}" style="width:100%;border-radius:4px;border:1px solid var(--border)"></div>`:'';
+  }).join('');
+  preview.style.display='block';
+}
+
+async function generateCmpPDF(){
+  const a1=cmpData.aval1,a2=cmpData.aval2;
+  if(!a1||!a2){showToast('Selecione as duas avaliações.');return;}
+  const obs=document.getElementById('cmp_obs').value||'';
+  const dt1=a1.data_avaliacao?new Date(a1.data_avaliacao+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  const dt2=a2.data_avaliacao?new Date(a2.data_avaliacao+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+  const VMAP={anterior:'Anterior',posterior:'Posterior',esquerdo:'Lat. Esq.',direito:'Lat. Dir.'};
+  const fotoRow=(a,label)=>['anterior','posterior','esquerdo','direito'].map(v=>{
+    const src=a['foto_'+v];
+    return src?`<div style="text-align:center"><div style="font-size:9px;font-weight:600;color:#555;margin-bottom:3px;text-transform:uppercase">${VMAP[v]}</div><img src="${src}" style="width:100%;border-radius:4px;border:1px solid #e0e0e0"></div>`:'';
+  }).join('');
+  const clinica=document.getElementById('pdf_clinica').value||'Avaliação Postural';
+  const aval=document.getElementById('p_aval').value||'—';
+  const nome=a1.paciente_nome||a2.paciente_nome||'Paciente';
+  const html=`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1a1a18">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Postural">
+<link rel="apple-touch-icon" href="/icon-192.png">
+  <style>*{box-sizing:border-box;margin:0;padding:0}@page{size:A4 landscape;margin:12mm}body{font-family:'Inter',system-ui,sans-serif;background:#fff;color:#111;padding:0}</style>
+  </head><body>
+  <div style="max-width:100%">
+    <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #1a1a18;padding-bottom:10px;margin-bottom:14px">
+      <div><div style="font-size:20px;font-weight:700">RELATÓRIO COMPARATIVO</div><div style="font-size:13px;font-weight:600;margin-top:2px">${clinica}</div></div>
+      <div style="text-align:right"><div style="font-size:14px;font-weight:600">${nome}</div><div style="font-size:11px;color:#555">Avaliador: ${aval}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#fff;background:#1a1a18;padding:6px 12px;border-radius:6px;margin-bottom:10px;text-align:center">ANTES — ${dt1}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${fotoRow(a1,'Antes')}</div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#fff;background:#1a6b35;padding:6px 12px;border-radius:6px;margin-bottom:10px;text-align:center">DEPOIS — ${dt2}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${fotoRow(a2,'Depois')}</div>
+      </div>
+    </div>
+    ${obs?`<div style="border:1px solid #e0e0e0;border-radius:8px;padding:12px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:6px">Evolução observada</div><div style="font-size:12px;color:#333;line-height:1.6;white-space:pre-wrap">${obs}</div></div>`:''}
+    <div style="padding-top:8px;border-top:1px solid #e0e0e0;display:flex;justify-content:space-between;font-size:10px;color:#aaa">
+      <span>${clinica}</span><span>Gerado em ${new Date().toLocaleDateString('pt-BR')}</span>
+    </div>
+  </div>
+  <script>window.onload=()=>{window.print();}<\/script></body></html>`;
+  const win=window.open('','_blank');
+  if(!win){alert('Permita pop-ups.');return;}
+  win.document.write(html);win.document.close();
+}
+
+// ─── ÂNGULOS NO PDF COMO TABELA ───
+function buildAnglesTable(view){
+  const angs=angles[view]||[],lms=landmarks[view]||[];
+  if(!angs.length)return '';
+  const rows=angs.map((ang,i)=>{
+    const pa=lms[ang.a]?.name||'?',pv=lms[ang.v]?.name||'?',pb=lms[ang.b]?.name||'?';
+    return `<tr><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0">${i+1}</td><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;color:#555">${pa} → ${pv} → ${pb}</td><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-weight:600;text-align:right">${ang.deg}°</td></tr>`;
+  }).join('');
+  return `<table style="width:100%;border-collapse:collapse;font-size:11px;margin-top:6px"><thead><tr><th style="padding:3px 8px;text-align:left;border-bottom:1px solid #e0e0e0;color:#555;font-size:10px;text-transform:uppercase">#</th><th style="padding:3px 8px;text-align:left;border-bottom:1px solid #e0e0e0;color:#555;font-size:10px;text-transform:uppercase">Pontos</th><th style="padding:3px 8px;text-align:right;border-bottom:1px solid #e0e0e0;color:#555;font-size:10px;text-transform:uppercase">Ângulo</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+// ─── GRADE DO SIMETRÓGRAFO ───
+function toggleGrade(){
+  if(!curView)return;
+  const on=document.getElementById('gradeOn').checked;
+  S().gradeOn=on;
+  document.getElementById('gradeControls').style.display=on?'block':'none';
+  scheduleSave();draw();
+}
+function setGradeType(type){
+  if(!curView)return;S().gradeType=type;
+  ['grade_simples','grade_central'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.toggle('on',id==='grade_'+type);});
+  draw();
+}
+function syncGrade(prop,val,otherId){
+  if(!curView)return;
+  const v=parseFloat(val)||0;
+  if(prop==='spacing')S().gradeSpacing=v;
+  else if(prop==='op')S().gradeOp=v/100;
+  else if(prop==='lw')S().gradeLW=v;
+  else if(prop==='offX')S().gradeOffX=v;
+  else if(prop==='offY')S().gradeOffY=v;
+  else if(prop==='w')S().gradeW=v;
+  else if(prop==='h')S().gradeH=v;
+  const el=document.getElementById(otherId);
+  if(el)el.value=prop==='op'?Math.round(v):v;
+  scheduleSave();draw();
+}
+function resetGradePos(){
+  if(!curView)return;
+  const s=S();s.gradeOffX=0;s.gradeOffY=0;s.gradeW=100;s.gradeH=100;
+  loadControls();draw();
+}
+function toggleLines(){
+  if(!curView)return;
+  S().linesOn=document.getElementById('linesOn').checked;
+  scheduleSave();draw();
+}
+function toggleVAxis(){
+  if(!curView)return;
+  const on=document.getElementById('vAxisOn').checked;
+  S().vAxisOn=on;
+  document.getElementById('vAxisControls').style.opacity=on?'1':'0.4';
+  scheduleSave();draw();
+}
+function syncGradeStyle(val){if(!curView)return;S().gradeStyle=val;draw();}
+function setGradeColor(color,id){
+  if(!curView)return;S().gradeColor=color;
+  ['gc_w','gc_c','gc_y','gc_g','gc_r','gc_o','gc_p','gc_b','gc_gr'].forEach(i=>{const el=document.getElementById(i);if(el)el.classList.toggle('on',i===id);});
+  draw();
+}
+
+function syncGradeBorder(prop,val){
+  if(!curView)return;const s=S();
+  if(prop==='on'){
+    s.gradeBorderOn=val;
+    document.getElementById('gradeBorderControls').style.display=val?'block':'none';
+  } else if(prop==='lw'){
+    const v=parseFloat(val)||2;s.gradeBorderLW=v;
+    const n=document.getElementById('gradeBorderLWN');if(n)n.value=v;
+    const r=document.getElementById('gradeBorderLW');if(r)r.value=v;
+  } else if(prop==='op'){
+    const v=parseFloat(val)||80;s.gradeBorderOp=v/100;
+    const n=document.getElementById('gradeBorderOpN');if(n)n.value=Math.round(v);
+    const r=document.getElementById('gradeBorderOp');if(r)r.value=Math.round(v);
+  } else if(prop==='style'){
+    s.gradeBorderStyle=val;
+  }
+  scheduleSave();draw();
+}
+function setGradeBorderColor(color,id){
+  if(!curView)return;S().gradeBorderColor=color;
+  ['gbc_w','gbc_c','gbc_y','gbc_g','gbc_r','gbc_o','gbc_p','gbc_b','gbc_gr'].forEach(i=>{const el=document.getElementById(i);if(el)el.classList.toggle('on',i===id);});
+  draw();
+}
+
+function drawGrade(ctx,canvas,s,lw){
+  if(!s.gradeOn)return;
+  const scale=lw||1;
+  const cellH=canvas.height*(s.gradeSpacing/100);
+  const cellW=cellH;
+
+  // área da grade (com offset e dimensões)
+  const gW=canvas.width*(( s.gradeW||100)/100);
+  const gH=canvas.height*((s.gradeH||100)/100);
+  const offX=canvas.width *((s.gradeOffX||0)/100);
+  const offY=canvas.height*((s.gradeOffY||0)/100);
+  // centralizar a grade dentro da área e aplicar offset
+  const startX=(canvas.width-gW)/2+offX;
+  const startY=(canvas.height-gH)/2+offY;
+
+  ctx.save();
+  // clip para a área da grade
+  ctx.beginPath();
+  ctx.rect(startX,startY,gW,gH);
+  ctx.clip();
+
+  ctx.strokeStyle=s.gradeColor;
+  // estilo de linha
+  if(s.gradeStyle==='dashed')ctx.setLineDash([Math.max(5,cellW*0.3),Math.max(4,cellW*0.2)]);
+  else if(s.gradeStyle==='dotted')ctx.setLineDash([1.5,Math.max(4,cellW*0.25)]);
+  else ctx.setLineDash([]);
+
+  // linhas verticais — alinhadas a partir do centro da área
+  const midX=startX+gW/2;
+  // para esquerda e direita a partir do centro
+  for(let i=0;;i++){
+    const x1=midX-i*cellW;
+    const x2=midX+i*cellW;
+    const drawLine=(x)=>{
+      const isCentral=s.gradeType==='central'&&i===0;
+      ctx.lineWidth=isCentral?s.gradeLW*2.5*scale:s.gradeLW*scale;
+      ctx.globalAlpha=isCentral?Math.min(s.gradeOp*2,1):s.gradeOp;
+      ctx.beginPath();ctx.moveTo(x,startY);ctx.lineTo(x,startY+gH);ctx.stroke();
+    };
+    if(x1>=startX-cellW)drawLine(x1);
+    if(i>0&&x2<=startX+gW+cellW)drawLine(x2);
+    if(x1<startX-cellW&&x2>startX+gW+cellW)break;
+    if(i>200)break;
+  }
+
+  // linhas horizontais
+  ctx.lineWidth=s.gradeLW*scale;ctx.globalAlpha=s.gradeOp;
+  for(let y=startY;y<=startY+gH+cellH;y+=cellH){
+    ctx.beginPath();ctx.moveTo(startX,y);ctx.lineTo(startX+gW,y);ctx.stroke();
+  }
+
+  ctx.setLineDash([]);ctx.restore();
+
+  // BORDA — desenhada FORA do clip, sobre tudo
+  if(s.gradeBorderOn){
+    ctx.save();
+    ctx.globalAlpha=s.gradeBorderOp||0.8;
+    ctx.strokeStyle=s.gradeBorderColor||'#ffffff';
+    const blw=(s.gradeBorderLW||2)*scale;
+    ctx.lineWidth=blw;
+    const bStyle=s.gradeBorderStyle||'solid';
+    if(bStyle==='dashed')ctx.setLineDash([Math.max(8,blw*5),Math.max(5,blw*3)]);
+    else if(bStyle==='dotted')ctx.setLineDash([2,Math.max(5,blw*3)]);
+    else ctx.setLineDash([]);
+    // inset a metade da espessura para que a borda fique dentro da área
+    const inset=blw/2;
+    ctx.strokeRect(startX+inset,startY+inset,gW-blw,gH-blw);
+    ctx.setLineDash([]);ctx.restore();
+  }
+}
+
+
+// ═══════════════════════════════════════
+// PACIENTES
+// ═══════════════════════════════════════
+let pacientesCache=[], pacModalMode='list', currentPacienteId=null;
+
+async function openPacientesModal(mode){
+  pacModalMode=mode;
+  document.getElementById('pacientesModal').classList.add('open');
+  document.getElementById('pacModalTitle').textContent=mode==='link'?'Selecionar paciente':'Pacientes';
+  switchPacTab('list');
+  await loadPacientes();
+}
+function closePacModal(){document.getElementById('pacientesModal').classList.remove('open');}
+
+function switchPacTab(tab){
+  document.getElementById('ptab_list').classList.toggle('active',tab==='list');
+  document.getElementById('ptab_new').classList.toggle('active',tab==='new');
+  document.getElementById('pacListSection').style.display=tab==='list'?'block':'none';
+  document.getElementById('pacNewSection').style.display=tab==='new'?'block':'none';
+  if(tab==='new'){
+    ['pac_nome','pac_nasc','pac_tel','pac_email','pac_prof','pac_obs'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    document.getElementById('pac_sexo').value='';
+  }
+}
+
+async function loadPacientes(){
+  const list=document.getElementById('pacList');
+  list.innerHTML='<p style="font-size:12px;color:var(--text-hint)">Carregando...</p>';
+  const {data,error}=await sb.from('pacientes')
+    .select('*').eq('user_id',currentUser.id).order('nome');
+  if(error){list.innerHTML='<p style="color:var(--danger-text);font-size:12px">Erro ao carregar.</p>';return;}
+  pacientesCache=data||[];
+  renderPacList(pacientesCache);
+}
+
+function filterPacientes(q){
+  const filtered=pacientesCache.filter(p=>p.nome.toLowerCase().includes(q.toLowerCase()));
+  renderPacList(filtered);
+}
+
+function renderPacList(list){
+  const c=document.getElementById('pacList');
+  if(!list.length){c.innerHTML='<p style="font-size:12px;color:var(--text-hint)">Nenhum paciente encontrado. Clique em "Novo paciente" para cadastrar.</p>';return;}
+  c.innerHTML='';
+  list.forEach(p=>{
+    const card=document.createElement('div');card.className='pac-card';
+    const nasc=p.nasc?new Date(p.nasc+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+    const isLinked=p.id===currentPacienteId;
+    card.innerHTML=`<div style="flex:1">
+      <div class="pac-name">${p.nome}${isLinked?'&nbsp;<span style="font-size:10px;background:var(--success-bg);color:var(--success-text);padding:1px 6px;border-radius:10px">vinculado</span>':''}</div>
+      <div class="pac-meta">${nasc}${p.profissao?' · '+p.profissao:''}</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      ${pacModalMode==='link'?`<button class="btn btn-primary btn-sm" onclick="vincularPaciente('${p.id}','${p.nome.replace(/'/g,"\'")}')">Selecionar</button>`:''}
+      <button class="btn btn-secondary btn-sm" onclick="editPaciente('${p.id}')">Editar</button>
+      <button class="btn btn-danger btn-sm" onclick="deletePaciente('${p.id}',this)">Excluir</button>
+    </div>`;
+    c.appendChild(card);
+  });
+}
+
+async function savePaciente(){
+  const nome=document.getElementById('pac_nome').value.trim();
+  if(!nome){showToast('Nome é obrigatório.');return;}
+  const payload={
+    user_id:currentUser.id,
+    nome,
+    nasc:document.getElementById('pac_nasc').value||null,
+    sexo:document.getElementById('pac_sexo').value||null,
+    telefone:document.getElementById('pac_tel').value||null,
+    email:document.getElementById('pac_email').value||null,
+    profissao:document.getElementById('pac_prof').value||null,
+    observacoes:document.getElementById('pac_obs').value||null
+  };
+  const {error}=await sb.from('pacientes').insert(payload);
+  if(error){showToast('Erro: '+error.message);return;}
+  showToast('Paciente cadastrado!');
+  await loadPacientes();
+  switchPacTab('list');
+}
+
+async function deletePaciente(id,btn){
+  if(!confirm('Excluir este paciente?'))return;
+  btn.disabled=true;
+  const {error}=await sb.from('pacientes').delete().eq('id',id);
+  if(error){showToast('Erro ao excluir.');btn.disabled=false;return;}
+  if(id===currentPacienteId)desvincularPaciente();
+  showToast('Paciente excluído.');
+  await loadPacientes();
+}
+
+async function editPaciente(id){
+  const p=pacientesCache.find(x=>x.id===id);if(!p)return;
+  switchPacTab('new');
+  document.getElementById('pac_nome').value=p.nome||'';
+  document.getElementById('pac_nasc').value=p.nasc||'';
+  document.getElementById('pac_sexo').value=p.sexo||'';
+  document.getElementById('pac_tel').value=p.telefone||'';
+  document.getElementById('pac_email').value=p.email||'';
+  document.getElementById('pac_prof').value=p.profissao||'';
+  document.getElementById('pac_obs').value=p.observacoes||'';
+  // override save to update
+  document.querySelector('#pacNewSection .btn-primary').onclick=async()=>{
+    const nome=document.getElementById('pac_nome').value.trim();if(!nome)return;
+    const payload={nome,nasc:document.getElementById('pac_nasc').value||null,sexo:document.getElementById('pac_sexo').value||null,telefone:document.getElementById('pac_tel').value||null,email:document.getElementById('pac_email').value||null,profissao:document.getElementById('pac_prof').value||null,observacoes:document.getElementById('pac_obs').value||null};
+    const {error}=await sb.from('pacientes').update(payload).eq('id',id);
+    if(error){showToast('Erro: '+error.message);return;}
+    showToast('Paciente atualizado!');
+    document.querySelector('#pacNewSection .btn-primary').onclick=savePaciente;
+    await loadPacientes();switchPacTab('list');
+  };
+}
+
+function vincularPaciente(id,nome){
+  currentPacienteId=id;
+  // preenche campos da avaliação com dados do paciente
+  const p=pacientesCache.find(x=>x.id===id);
+  if(p){
+    const set=(el,v)=>{const e=document.getElementById(el);if(e&&!e.value&&v)e.value=v;};
+    set('p_nome',p.nome);set('p_nasc',p.nasc);set('p_sexo',p.sexo);
+    set('p_prof',p.profissao);
+    calcAge();updateBadge();
+  }
+  document.getElementById('pacienteVinculado').textContent='✓ '+nome;
+  document.getElementById('pacienteVinculado').style.color='var(--success-text)';
+  document.getElementById('btnDesvincular').style.display='inline-flex';
+  closePacModal();scheduleSave();showToast('Paciente vinculado!');
+}
+
+function desvincularPaciente(){
+  currentPacienteId=null;
+  document.getElementById('pacienteVinculado').textContent='Nenhum paciente vinculado';
+  document.getElementById('pacienteVinculado').style.color='';
+  document.getElementById('btnDesvincular').style.display='none';
+  scheduleSave();
+}
+
+// ═══════════════════════════════════════
+// CALIBRAÇÃO
+// ═══════════════════════════════════════
+const calibState={};
+function getCalib(v){
+  if(!calibState[v])calibState[v]={on:false,p1:null,p2:null,cm:null,pxPerCm:null,step:0};
+  return calibState[v];
+}
+
+function toggleCalib(){
+  if(!curView)return;
+  const on=document.getElementById('calibOn').checked;
+  getCalib(curView).on=on;
+  document.getElementById('calibControls').style.display=on?'block':'none';
+  if(on){
+    setTool('calib');
+    document.getElementById('calibHint').textContent='Clique no 1º ponto de referência na foto';
+  } else {
+    setTool('none');
+  }
+  draw();
+}
+
+function updateCalib(){
+  const v=curView;if(!v)return;
+  const cal=getCalib(v);
+  const cm=parseFloat(document.getElementById('calibCm').value);
+  if(!cal.p1||!cal.p2||!cm)return;
+  cal.cm=cm;
+  // calcula px por cm usando coordenadas relativas e tamanho real da imagem
+  const canvas=document.getElementById('mainCanvas');
+  const dxPct=Math.abs(cal.p2.px-cal.p1.px);
+  const dyPct=Math.abs(cal.p2.py-cal.p1.py);
+  const dxPx=dxPct*canvas.width;
+  const dyPx=dyPct*canvas.height;
+  const distPx=Math.sqrt(dxPx*dxPx+dyPx*dyPx);
+  cal.pxPerCm=distPx/cm;
+  const el=document.getElementById('calibResult');
+  if(el)el.textContent=`Calibrado: ${cal.pxPerCm.toFixed(1)} px/cm`;
+  showToast('Calibração aplicada!');draw();
+}
+
+function resetCalib(){
+  if(!curView)return;
+  calibState[curView]={on:true,p1:null,p2:null,cm:null,pxPerCm:null,step:0};
+  document.getElementById('calibResult').textContent='';
+  document.getElementById('calibCm').value='';
+  document.getElementById('calibHint').textContent='Clique no 1º ponto de referência na foto';
+  draw();
+}
+
+function handleCalibClick(px,py,canvas){
+  const cal=getCalib(curView);
+  const h=document.getElementById('calibHint');
+  if(!cal.p1){
+    cal.p1={px,py};cal.step=1;
+    if(h)h.textContent='Ponto 1 marcado. Clique no 2º ponto.';
+  } else if(!cal.p2){
+    cal.p2={px,py};cal.step=2;
+    if(h)h.textContent='Informe a distância real em cm abaixo.';
+    updateCalib();
+  }
+  draw();
+}
+
+function drawCalib(ctx,canvas,view,scaleFactor){
+  const cal=calibState[view];if(!cal||!cal.on)return;
+  const r=6*(scaleFactor||1);
+  ctx.save();
+  if(cal.p1){
+    const x=cal.p1.px*canvas.width,y=cal.p1.py*canvas.height;
+    ctx.globalAlpha=.9;ctx.fillStyle='#00ff88';
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+  }
+  if(cal.p1&&cal.p2){
+    const x1=cal.p1.px*canvas.width,y1=cal.p1.py*canvas.height;
+    const x2=cal.p2.px*canvas.width,y2=cal.p2.py*canvas.height;
+    ctx.globalAlpha=.85;ctx.strokeStyle='#00ff88';ctx.lineWidth=2*(scaleFactor||1);
+    ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha=.9;ctx.fillStyle='#00ff88';
+    ctx.beginPath();ctx.arc(x2,y2,r,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+    if(cal.cm){
+      const mx=(x1+x2)/2,my=(y1+y2)/2-14;
+      const fs=Math.max(11,12*(scaleFactor||1));
+      ctx.font=`600 ${fs}px Inter,sans-serif`;ctx.textBaseline='middle';ctx.textAlign='center';
+      const label=cal.cm+'cm';const tw=ctx.measureText(label).width;
+      ctx.globalAlpha=.85;ctx.fillStyle='rgba(0,0,0,.65)';
+      ctx.beginPath();ctx.roundRect(mx-tw/2-5,my-fs/2-3,tw+10,fs+6,4);ctx.fill();
+      ctx.fillStyle='#00ff88';ctx.fillText(label,mx,my);ctx.textAlign='left';
+    }
+  }
+  ctx.restore();
+}
+
+// função para converter px em cm usando calibração
+function pxToCm(pxDist,view){
+  const cal=calibState[view||curView];
+  if(!cal||!cal.pxPerCm)return null;
+  return (pxDist/cal.pxPerCm).toFixed(1);
+}
+
+// ═══════════════════════════════════════
+// ANOTAÇÕES DE TEXTO
+// ═══════════════════════════════════════
+const annotations={};
+function getAnnots(v){if(!annotations[v])annotations[v]=[];return annotations[v];}
+
+function handleAnnotClick(px,py){
+  const text=prompt('Digite a anotação:','');
+  if(!text||!text.trim())return;
+  pushHistory(curView);
+  getAnnots(curView).push({px,py,text:text.trim(),color:'#ffff00',fontSize:12});
+  scheduleSave();draw();
+}
+
+function drawAnnotations(ctx,canvas,view,scaleFactor){
+  const annots=annotations[view]||[];if(!annots.length)return;
+  const sc=scaleFactor||1;
+  ctx.save();
+  annots.forEach((a,i)=>{
+    const x=a.px*canvas.width,y=a.py*canvas.height;
+    const fs=Math.max(10,(a.fontSize||12)*sc);
+    ctx.font=`500 ${fs}px Inter,sans-serif`;ctx.textBaseline='top';
+    const tw=ctx.measureText(a.text).width;
+    const pad=4*sc,lineH=fs+2;
+    // fundo
+    ctx.globalAlpha=.82;
+    ctx.fillStyle='rgba(0,0,0,.6)';
+    ctx.beginPath();ctx.roundRect(x-pad,y-pad,tw+pad*2,lineH+pad*2,4*sc);ctx.fill();
+    // texto
+    ctx.globalAlpha=.96;ctx.fillStyle=a.color||'#ffff00';
+    ctx.fillText(a.text,x,y);
+    // ponto âncora
+    ctx.globalAlpha=.85;ctx.fillStyle=a.color||'#ffff00';
+    ctx.beginPath();ctx.arc(x,y+lineH/2+pad,3*sc,0,Math.PI*2);ctx.fill();
+    ctx.globalAlpha=1;
+  });
+  ctx.restore();
+}
+
+function renderAnnotList(){
+  // update lmList area to show annotations count hint
+  // annotations are shown on canvas, listed in lmList section
+}
+
+
+// ─── LUPA ───
+function toggleLupa(){
+  lupaOn=!lupaOn;
+  const btn=document.getElementById('btn_lupa');
+  if(btn)btn.classList.toggle('on',lupaOn);
+  if(!lupaOn)hideMagnifier();
+  showToast(lupaOn?'Lupa ativada':'Lupa desativada');
+}
+function hideMagnifier(){
+  const m=document.getElementById('magnifier');if(m)m.style.display='none';
+  const d=document.getElementById('snapDot');if(d)d.style.display='none';
+}
+function drawMagnifier(mouseX,mouseY,canvasX,canvasY,canvas){
+  const mag=document.getElementById('magnifier');
+  const magC=document.getElementById('magCanvas');
+  if(!mag||!magC||!imgs[curView])return;
+  const r=LUPA_R,d=r*2,mz=LUPA_ZOOM;
+  mag.style.width=d+'px';mag.style.height=d+'px';
+  magC.width=d;magC.height=d;
+  const wrap=document.getElementById('singleWrap');
+  let lx=mouseX+16,ly=mouseY-d-16;
+  if(wrap&&lx+d>wrap.clientWidth-8)lx=mouseX-d-16;
+  if(ly<8)ly=mouseY+16;
+  mag.style.left=lx+'px';mag.style.top=ly+'px';
+  mag.style.display='block';
+  const ctx=magC.getContext('2d');
+  ctx.save();
+  ctx.beginPath();ctx.arc(r,r,r,0,Math.PI*2);ctx.clip();
+  ctx.drawImage(canvas,canvasX-r/mz,canvasY-r/mz,d/mz,d/mz,0,0,d,d);
+  ctx.globalAlpha=0.6;ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(r,r-12);ctx.lineTo(r,r+12);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(r-12,r);ctx.lineTo(r+12,r);ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+}
+
+// ─── SNAP ───
+function getSnappedPos(px,py){
+  if(!curView||!snapEnabled)return{px,py,snapped:false};
+  const s=S(),SNAP_THR=0.015;
+  let snappedX=px,snappedY=py,snapped=false;
+  if(s.vAxisOn!==false&&Math.abs(px-s.vPos/100)<SNAP_THR){snappedX=s.vPos/100;snapped=true;}
+  const vis=s.hLinesVis||s.hLines.map(()=>true);
+  s.hLines.forEach((hl,i)=>{
+    if(vis[i]===false)return;
+    if(Math.abs(py-hl/100)<SNAP_THR){snappedY=hl/100;snapped=true;}
+  });
+  return{px:snappedX,py:snappedY,snapped};
+}
+
+// ─── PAINEL ABAS ───
+let activePanelTab='linhas';
+function switchPanelTab(tab){
+  activePanelTab=tab;
+  ['linhas','ferramentas','medicoes'].forEach(t=>{
+    const btn=document.getElementById('ptab_'+t);
+    const content=document.getElementById('pc_'+t);
+    if(btn)btn.classList.toggle('active',t===tab);
+    if(content)content.classList.toggle('active',t===tab);
+  });
+}
+
+// ─── PAINEL RECOLHÍVEL ───
+let panelCollapsed=false;
+function togglePanel(){
+  panelCollapsed=!panelCollapsed;
+  const shell=document.getElementById('sgShell')||document.querySelector('.sg-shell');
+  if(shell){
+    if(panelCollapsed){shell.style.gridTemplateColumns='88px 1fr 0px';}
+    else{shell.style.gridTemplateColumns='88px 1fr 300px';}
+  }
+}
+
+// ─── MINIATURAS ───
+function renderVistaMiniBar(){
+  const bar=document.getElementById('vistaSidebar');if(!bar)return;
+  bar.innerHTML='';
+  VIEWS.forEach(v=>{
+    const slot=document.createElement('div');
+    slot.className='vista-mini'+(v===curView?' cur':'');
+    const thumb=document.createElement('div');thumb.className='vista-mini-thumb';
+    if(imgs[v]){
+      const img=imgs[v];
+      const TW=76,TH=100;
+      const scale=Math.min(TW/img.width,TH/img.height);
+      const mc=document.createElement('canvas');
+      mc.width=Math.round(img.width*scale);mc.height=Math.round(img.height*scale);
+      const mainW=document.getElementById('mainCanvas')?.width||400;
+      drawOnCanvas(mc,v,getState(v).lW*(mc.width/mainW));
+      mc.style.cssText='display:block;max-width:100%;max-height:100%';
+      thumb.appendChild(mc);
+    } else {
+      thumb.className='vista-mini-ph';
+      thumb.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".3"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+    }
+    slot.appendChild(thumb);
+    const lbl=document.createElement('div');lbl.className='vista-mini-lbl';lbl.textContent=VL[v];
+    slot.appendChild(lbl);
+    slot.onclick=()=>{curView=v;loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();};
+    bar.appendChild(slot);
+  });
+}
+
+
+// ─── PDF TABELA COMPLETA ───
+function buildAnglesTableFull(view){
+  const angs=angles[view]||[],lms=landmarks[view]||[],rs=rulers[view]||[];
+  let html='';
+  if(angs.length){
+    const rows=angs.map((ang,i)=>`<tr><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-size:10px;color:#777">${i+1}</td><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-size:10px;color:#555">${lms[ang.a]?.name||'?'} → ${lms[ang.v]?.name||'?'} → ${lms[ang.b]?.name||'?'}</td><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-size:11px;font-weight:600;text-align:right">${ang.deg}°</td></tr>`).join('');
+    html+=`<div style="margin-top:6px"><div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:3px">Ângulos</div><table style="width:100%;border-collapse:collapse"><tbody>${rows}</tbody></table></div>`;
+  }
+  if(rs.length){
+    const rrows=rs.map((r,i)=>`<tr><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-size:10px;color:#777">${i+1}</td><td style="padding:3px 8px;border-bottom:1px solid #f0f0f0;font-size:11px;font-weight:600;text-align:right">${r.dist}%${r.angle!==undefined?' · '+r.angle+'°':''}</td></tr>`).join('');
+    html+=`<div style="margin-top:6px"><div style="font-size:9px;font-weight:600;color:#888;text-transform:uppercase;margin-bottom:3px">Réguas</div><table style="width:100%;border-collapse:collapse"><tbody>${rrows}</tbody></table></div>`;
+  }
+  return html;
+}
+
+// ─── ONBOARDING ───
+const OB_STEPS=6;
+let obCurrent=0;
+function initOnboarding(){
+  if(localStorage.getItem('ob_done'))return;
+  obCurrent=0;renderObDots();
+  document.getElementById('obOverlay').style.display='flex';
+}
+function renderObDots(){
+  const dots=document.getElementById('obDots');if(!dots)return;
+  dots.innerHTML='';
+  for(let i=0;i<OB_STEPS;i++){const d=document.createElement('div');d.className='ob-dot'+(i===obCurrent?' active':'');dots.appendChild(d);}
+  const btn=document.getElementById('obNextBtn');
+  if(btn)btn.textContent=obCurrent===OB_STEPS-1?'Começar ✓':'Próximo →';
+}
+function obNext(){
+  document.getElementById('ob'+obCurrent)?.classList.remove('active');
+  obCurrent++;
+  if(obCurrent>=OB_STEPS){skipOnboarding();return;}
+  document.getElementById('ob'+obCurrent)?.classList.add('active');
+  renderObDots();
+}
+function skipOnboarding(){
+  localStorage.setItem('ob_done','1');
+  document.getElementById('obOverlay').style.display='none';
+}
+
+// ─── UTILS ───
+function showToast(msg,dur=2500){
+  const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';
+  clearTimeout(showToast._t);showToast._t=setTimeout(()=>{t.style.display='none';},dur);
+}
+
+// ─── INIT ───
+document.addEventListener('keydown',e=>{
+  // Ignorar quando foco está em input/textarea/select
+  const tag=(e.target.tagName||'').toLowerCase();
+  if(tag==='input'||tag==='textarea'||tag==='select'||e.target.isContentEditable)return;
+
+  // Ctrl/Cmd atalhos
+  if(e.ctrlKey||e.metaKey){
+    if(e.key==='z'){e.preventDefault();undo();return;}
+    if(e.key==='s'){e.preventDefault();saveSession(true);showToast('Salvo ✓');return;}
+    return;
+  }
+
+  // Teclas simples — só no simetrograph (step 2)
+  if(curStep!==2)return;
+  const k=e.key.toLowerCase();
+
+  // Navegar vistas com ← →
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight'){
+    e.preventDefault();
+    const idx=VIEWS.indexOf(curView);
+    if(idx<0)return;
+    const next=e.key==='ArrowRight'?(idx+1)%VIEWS.length:(idx-1+VIEWS.length)%VIEWS.length;
+    curView=VIEWS[next];
+    loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();
+    showToast(VL[curView]);
+    return;
+  }
+
+  // Ferramentas
+  const toolMap={p:'none',m:'lm',a:'angle',r:'ruler',t:'tri',n:'annot'};
+  if(toolMap[k]!==undefined){e.preventDefault();setTool(toolMap[k]);return;}
+
+  // Lupa
+  if(k==='l'){e.preventDefault();toggleLupa();return;}
+
+  // Grade
+  if(k==='g'){e.preventDefault();
+    const cb=document.getElementById('gradeOn');
+    if(cb){cb.checked=!cb.checked;toggleGrade();}
+    return;
+  }
+
+  // Escape — volta para ponteiro
+  if(e.key==='Escape'){e.preventDefault();setTool('none');return;}
+
+  // Delete — apagar último elemento da ferramenta ativa
+  if(e.key==='Delete'||e.key==='Backspace'){
+    // não interferir com inputs (já guardado acima, mas por segurança)
+    return;
+  }
+});
+window.addEventListener('resize',()=>{if(curStep===2)draw();});
+
+// ─── PWA ───
+let deferredPrompt = null;
+
+// Registra service worker
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async () => {
+    try {
+      const reg = await navigator.serviceWorker.register('/sw.js');
+      console.log('SW registrado:', reg.scope);
+    } catch(e) {
+      console.log('SW falhou:', e);
+    }
+  });
+}
+
+// Captura evento de instalação
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  // Mostra banner de instalação após 3s
+  setTimeout(() => {
+    const banner = document.getElementById('installBanner');
+    if(banner && !localStorage.getItem('pwa_installed')){
+      banner.style.display = 'flex';
+    }
+  }, 3000);
+});
+
+// Botão instalar
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('installBtn');
+  if(btn){
+    btn.addEventListener('click', async () => {
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if(outcome === 'accepted'){
+        localStorage.setItem('pwa_installed','1');
+        showToast('App instalado com sucesso!');
+      }
+      deferredPrompt = null;
+      document.getElementById('installBanner').style.display = 'none';
+    });
+  }
+});
+
+// App instalado
+window.addEventListener('appinstalled', () => {
+  localStorage.setItem('pwa_installed','1');
+  document.getElementById('installBanner').style.display = 'none';
+  showToast('App instalado!');
+});
+
+// Detecta se já está rodando como PWA
+if(window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone){
+  localStorage.setItem('pwa_installed','1');
+}
+
+// Verifica sessão ativa ao carregar
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user){
+    await checkUserAndLoad(session.user);
+  }
+})();
+</script>
+
+<!-- PWA Install Banner -->
+<div id="installBanner">
+  <div class="ib-icon">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+  </div>
+  <div class="ib-text">
+    <div class="ib-title">Instalar Avaliação Postural</div>
+    <div class="ib-sub">Acesse como app no celular ou computador</div>
+  </div>
+  <button class="btn btn-primary btn-sm" id="installBtn">Instalar</button>
+  <button class="btn btn-secondary btn-sm" onclick="document.getElementById('installBanner').style.display='none'">Agora não</button>
+</div>
+</body>
+</html>
