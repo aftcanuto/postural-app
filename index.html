@@ -285,6 +285,30 @@ header .sub{font-size:11px;color:var(--text-muted)}
 .sym-alert .sym-delta{color:#991b1b}
 .sym-score{display:flex;align-items:center;gap:6px;padding:6px 0;font-size:11px;font-weight:600}
 .undo-badge{font-size:9px;color:var(--text-hint);margin-left:4px;font-weight:400}
+/* ── Protocolo Guiado ── */
+.guided-banner{background:var(--info-bg);border:1px solid var(--info-text);border-radius:var(--r-md);padding:8px 10px;margin-top:6px}
+.guided-title{font-size:9px;font-weight:700;color:var(--info-text);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.guided-step{font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px}
+.guided-prog{height:4px;background:var(--border);border-radius:2px;margin-bottom:6px;overflow:hidden}
+.guided-prog-bar{height:100%;background:var(--info-text);border-radius:2px;transition:width .3s}
+.guided-btns{display:flex;gap:5px}
+.guided-btn{flex:1;font-size:10px;padding:3px 0;border-radius:var(--r-sm);cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);font-family:inherit}
+.guided-btn:hover{border-color:var(--border-mid);color:var(--text)}
+.guided-btn.primary{background:var(--info-text);color:#fff;border-color:var(--info-text)}
+/* ── Onboarding overlay ── */
+.onboard-overlay{position:absolute;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);border-radius:var(--r-md)}
+.onboard-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;max-width:280px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+.onboard-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.onboard-sub{font-size:10px;color:var(--text-muted);margin-bottom:12px}
+.onboard-list{list-style:none;margin-bottom:14px}
+.onboard-list li{font-size:11px;color:var(--text-muted);padding:2px 0;display:flex;align-items:center;gap:6px}
+.onboard-list li b{color:var(--text)}
+.onboard-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.onboard-btns{display:flex;gap:6px}
+.onboard-btn{flex:1;font-size:11px;padding:6px 0;border-radius:var(--r-sm);cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text-muted);font-family:inherit}
+.onboard-btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:600}
+.onboard-btn:hover{border-color:var(--border-mid)}
+/* ── Régua cm no canvas ── */
 </style>
 </head>
 <body>
@@ -462,6 +486,18 @@ header .sub{font-size:11px;color:var(--text-muted)}
         onclick="canvasClick(event)">
       </canvas>
       <div class="zoom-info" id="zoomInfo">100%</div>
+      <div class="onboard-overlay" id="onboardOverlay" style="display:none">
+        <div class="onboard-card" id="onboardCard">
+          <div class="onboard-title" id="onboardTitle"></div>
+          <div class="onboard-sub" id="onboardSub"></div>
+          <ol class="onboard-list" id="onboardList"></ol>
+          <div class="onboard-btns">
+            <button class="onboard-btn" onclick="dismissOnboard()">Dispensar</button>
+            <button class="onboard-btn primary" onclick="startGuidedFromOnboard()">Iniciar protocolo</button>
+          </div>
+        </div>
+      </div>
+
       <div id="magnifier"><canvas id="magCanvas"></canvas></div>
       <div class="snap-dot" id="snapDot"></div>
     </div>
@@ -666,6 +702,19 @@ header .sub{font-size:11px;color:var(--text-muted)}
           </button>
         </div>
         <div class="hint" id="toolHint">Selecione uma ferramenta e clique na foto</div>
+        <div id="guidedBanner" style="display:none" class="guided-banner">
+          <div class="guided-title">Protocolo guiado</div>
+          <div class="guided-step" id="guidedStepLabel">—</div>
+          <div class="guided-prog"><div class="guided-prog-bar" id="guidedProgBar" style="width:0%"></div></div>
+          <div class="guided-btns">
+            <button class="guided-btn" onclick="guidedSkip()">Pular</button>
+            <button class="guided-btn" onclick="guidedStop()">Encerrar</button>
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top:6px">
+          <label for="guidedToggle" style="font-size:11px;color:var(--text-muted)">Protocolo guiado</label>
+          <label class="toggle"><input type="checkbox" id="guidedToggle" onchange="toggleGuidedMode(this.checked)"><span class="toggle-slider"></span></label>
+        </div>
         <button class="tool-clear" onclick="clearAll()">🗑 Limpar marcações desta vista</button>
       </div>
 
@@ -1136,6 +1185,95 @@ function getAngleFinding(n1,nv,n2,deg){
   }
   return null;
 }
+
+
+// ─── ONBOARDING POR VISTA ───
+let onboardedViews=new Set(JSON.parse(localStorage.getItem('postural_onboarded')||'[]'));
+
+function checkOnboard(v){
+  if(onboardedViews.has(v))return;
+  const seq=GUIDED_PROTOCOL[v]||[];
+  const viewNames={anterior:'Anterior',posterior:'Posterior',esquerdo:'Lateral Esq.',direito:'Lateral Dir.'};
+  const el=document.getElementById('onboardOverlay');
+  if(!el)return;
+  document.getElementById('onboardTitle').textContent='📍 Vista '+viewNames[v];
+  document.getElementById('onboardSub').textContent='Pontos recomendados para esta vista:';
+  const list=document.getElementById('onboardList');
+  list.innerHTML=seq.map((name,i)=>
+    `<li><span class="onboard-dot" style="background:${ONBOARD_COLORS[i%ONBOARD_COLORS.length]}"></span><b>${i+1}.</b> ${name}</li>`
+  ).join('');
+  el.style.display='flex';
+}
+
+function dismissOnboard(){
+  const v=curView;
+  if(v){onboardedViews.add(v);localStorage.setItem('postural_onboarded',JSON.stringify([...onboardedViews]));}
+  const el=document.getElementById('onboardOverlay');if(el)el.style.display='none';
+}
+
+function resetOnboarding(){
+  onboardedViews.clear();localStorage.removeItem('postural_onboarded');
+  showToast('Onboarding redefinido');
+}
+
+// ─── PROTOCOLO GUIADO ───
+let guidedMode=false,guidedStep=0;
+const GUIDED_PROTOCOL={
+  anterior:['Tragus D','Tragus E','Acrômio D','Acrômio E','EIAS D','EIAS E',
+            'Joelho D','Joelho E','Tornozelo D','Tornozelo E'],
+  posterior:['Tragus D','Tragus E','Acrômio D','Acrômio E','Escápula D','Escápula E',
+             'EIPS D','EIPS E','Joelho D','Joelho E','Tornozelo D','Tornozelo E'],
+  esquerdo:['Tragus E','Acrômio E','Trocânter E','Joelho E','Tornozelo E'],
+  direito: ['Tragus D','Acrômio D','Trocânter D','Joelho D','Tornozelo D'],
+};
+const ONBOARD_COLORS=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8','#20c997','#f06595','#74c0fc','#a9e34b','#ffa94d','#da77f2'];
+
+function toggleGuidedMode(on){
+  guidedMode=on;
+  if(on){guidedStep=0;guidedApplyStep();}
+  else{document.getElementById('guidedBanner').style.display='none';setTool('none');}
+}
+
+function guidedApplyStep(){
+  if(!guidedMode||!curView)return;
+  const seq=GUIDED_PROTOCOL[curView]||[];
+  if(guidedStep>=seq.length){
+    showToast('✅ Protocolo concluído para esta vista!');
+    document.getElementById('guidedBanner').style.display='none';
+    const cb=document.getElementById('guidedToggle');if(cb)cb.checked=false;
+    guidedMode=false;setTool('none');return;
+  }
+  const name=seq[guidedStep];
+  setLMN(name);setTool('lm');switchPanelTab('ferramentas');
+  document.getElementById('guidedBanner').style.display='';
+  document.getElementById('guidedStepLabel').textContent=`Passo ${guidedStep+1}/${seq.length}: marque ${name}`;
+  const pct=Math.round(guidedStep/seq.length*100);
+  document.getElementById('guidedProgBar').style.width=pct+'%';
+}
+
+function guidedAdvance(){
+  if(!guidedMode)return;
+  guidedStep++;guidedApplyStep();
+}
+
+function guidedSkip(){
+  if(!guidedMode)return;
+  guidedStep++;guidedApplyStep();
+}
+
+function guidedStop(){
+  guidedMode=false;guidedStep=0;
+  document.getElementById('guidedBanner').style.display='none';
+  const cb=document.getElementById('guidedToggle');if(cb)cb.checked=false;
+  setTool('none');
+}
+
+function startGuidedFromOnboard(){
+  dismissOnboard();
+  const cb=document.getElementById('guidedToggle');if(cb)cb.checked=true;
+  toggleGuidedMode(true);
+}
+
 const LM_COLORS=['#ff6b6b','#ffd93d','#6bcb77','#4d96ff','#ff922b','#cc5de8','#20c997','#f06595'];
 let lmCI=0,viewMode='single';
 const historyStack={};
@@ -1459,6 +1597,7 @@ function handleUp(e){
       if(!rulers[pendingView])rulers[pendingView]=[];
       if(!triangles[pendingView])triangles[pendingView]=[];
       if(!historyStack[pendingView])historyStack[pendingView]=[];
+      setTimeout(()=>checkOnboard(curView),400);
       getState(pendingView);
       updateSlot(pendingView);
       if(!curView)curView=pendingView;
@@ -1498,7 +1637,7 @@ function renderSgTabs(){
     const off=document.createElement('canvas');off.width=TW;off.height=TH;
     off.getContext('2d').drawImage(img2,sx,sy,sw,sh,0,0,TW,TH);
     s.innerHTML=`<div class="photo-thumb-wrap"><img src="${off.toDataURL()}" alt="${VL[v]}"></div><div class="slot-lbl">${VL[v]}</div>`;
-    s.onclick=()=>{curView=v;renderSgTabs();loadControls();resetZoom();draw();};
+    s.onclick=()=>{curView=v;renderSgTabs();loadControls();resetZoom();draw();checkOnboard(v);};
     c.appendChild(s);
   });
 }
@@ -1782,6 +1921,7 @@ function canvasClick(e){
     pushHistory(curView,'lm');
     landmarks[curView].push({name:document.getElementById('lmName').value.trim()||'Ponto',px,py,color:LM_COLORS[lmCI%LM_COLORS.length]});
     lmCI++;renderLMList();scheduleSave();draw();
+    if(guidedMode)guidedAdvance();
   } else if(curTool==='angle'){
     const lms=landmarks[curView];if(!lms.length)return;
     let closest=-1,minD=Infinity;
@@ -1920,7 +2060,7 @@ function renderRulers(){
     const row=document.createElement('div');row.className='ruler-item';
     const cal=calibState[curView];
     const distCm=cal&&cal.pxPerCm&&document.getElementById('mainCanvas')?(()=>{const canvas=document.getElementById('mainCanvas');const dxPx=Math.abs(r.p2.px-r.p1.px)*canvas.width;const dyPx=Math.abs(r.p2.py-r.p1.py)*canvas.height;const distPx=Math.sqrt(dxPx*dxPx+dyPx*dyPx);return (distPx/cal.pxPerCm).toFixed(1)+'cm';})():null;
-    row.innerHTML=`<div><div style="font-weight:500;font-size:11px">Régua ${i+1}</div><div style="font-size:10px;color:var(--text-muted)">Total: <b>${r.dist}%</b>${distCm?' = <b style=\"color:var(--success-text)\">${distCm}</b>':''} · Vertical: <b>${r.distV}%</b></div></div><button class="ruler-del" onclick="delRuler(${i})">×</button>`;
+    row.innerHTML=`<div><div style="display:flex;align-items:baseline;gap:6px"><span style="font-weight:500;font-size:11px">Régua ${i+1}</span>${distCm?`<span style='font-size:13px;font-weight:700;color:var(--success-text)'>${distCm}</span>`:''}</div><div style="font-size:10px;color:var(--text-muted)">Total: <b>${r.dist}%</b>${distCm?'':''} · Vertical: <b>${r.distV}%</b>${!distCm?' <span style="color:var(--text-hint)">(calibre para ver cm)</span>':''}</div></div><button class="ruler-del" onclick="delRuler(${i})">×</button>`;
     c.appendChild(row);
   });
 }
@@ -2012,7 +2152,13 @@ function drawOnCanvas(canvas,view,forceLW){
     ctx.globalAlpha=.9;ctx.strokeStyle='#ffd93d';ctx.lineWidth=Math.max(1.5,lw);ctx.setLineDash([]);
     ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
     [[x1,y1],[x2,y2]].forEach(([px,py])=>{ctx.fillStyle='#ffd93d';ctx.beginPath();ctx.arc(px,py,4,0,Math.PI*2);ctx.fill();});
-    const mx=(x1+x2)/2,my=(y1+y2)/2-10,label=`${ru.dist}% V:${ru.distV}%`,fsR=Math.max(11,lw*9);
+    const _cal=calibState[view];
+    let _cm='';
+    if(_cal&&_cal.pxPerCm){
+      const _dx=Math.abs(ru.p2.px-ru.p1.px)*canvas.width,_dy=Math.abs(ru.p2.py-ru.p1.py)*canvas.height;
+      _cm=' = '+( Math.sqrt(_dx*_dx+_dy*_dy)/_cal.pxPerCm).toFixed(1)+'cm';
+    }
+    const mx=(x1+x2)/2,my=(y1+y2)/2-10,label=`${_cm?_cm.trim():ru.dist+'%'}`,fsR=Math.max(11,lw*9);
     ctx.font=`600 ${fsR}px Inter,sans-serif`;ctx.textBaseline='middle';
     const tw=ctx.measureText(label).width;
     ctx.globalAlpha=.85;ctx.fillStyle='rgba(0,0,0,.65)';
@@ -2914,7 +3060,7 @@ function renderVistaMiniBar(){
     slot.appendChild(thumb);
     const lbl=document.createElement('div');lbl.className='vista-mini-lbl';lbl.textContent=VL[v];
     slot.appendChild(lbl);
-    slot.onclick=()=>{curView=v;loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();};
+    slot.onclick=()=>{curView=v;loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();checkOnboard(v);};
     bar.appendChild(slot);
   });
 }
@@ -2992,7 +3138,7 @@ document.addEventListener('keydown',e=>{
     if(idx<0)return;
     const next=e.key==='ArrowRight'?(idx+1)%VIEWS.length:(idx-1+VIEWS.length)%VIEWS.length;
     curView=VIEWS[next];
-    loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();
+    loadControls();resetZoom();draw();renderVistaMiniBar();renderAnnotList();checkOnboard(curView);
     showToast(VL[curView]);
     return;
   }
